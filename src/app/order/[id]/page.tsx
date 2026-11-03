@@ -26,16 +26,29 @@ export default function OrderConfirmationPage() {
       // ignore
     }
 
-    // Retrieve order details from localStorage if available
-    try {
-      const orders = JSON.parse(localStorage.getItem('vishnu-orders') || '[]');
-      const found = orders.find((o: any) => o.id === orderId);
-      if (found) {
-        setOrder(found);
+    // Retrieve order details from localStorage or backend API
+    const loadOrder = async () => {
+      try {
+        const orders = JSON.parse(localStorage.getItem('vishnu-orders') || '[]');
+        const found = orders.find((o: any) => o.id === orderId);
+        if (found) {
+          setOrder(found);
+        }
+
+        // Fetch live server order to get updated fulfillment/tracking status
+        const res = await fetch(`/api/orders/${orderId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.order) {
+            setOrder(data.order);
+          }
+        }
+      } catch (e) {
+        // ignore
       }
-    } catch (e) {
-      // ignore
-    }
+    };
+
+    loadOrder();
   }, [orderId]);
 
   return (

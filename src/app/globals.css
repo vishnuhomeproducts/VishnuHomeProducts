@@ -30,6 +30,12 @@
   h1, h2, h3, .font-display {
     font-family: 'Playfair Display', Georgia, serif;
   }
+
+  .font-price, .font-num {
+    font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.02em;
+  }
 }
 
 /* Animations */
@@ -57,8 +63,33 @@
   animation: slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.2s ease-out forwards;
+@keyframes radarSweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes blipPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 0.45;
+  }
+}
+
+.animate-radar-sweep {
+  animation: radarSweep 6s linear infinite;
+  transform-origin: center center;
+}
+
+.animate-blip-pulse {
+  animation: blipPulse 1.8s ease-in-out infinite;
 }
 
 /* Custom utility for clean scrollbars */
@@ -68,4 +99,112 @@
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ================= Claymorphism Utility Classes (For /lucky Operations Hub) ================= */
+.clay-bg {
+  background-color: #eaedf2;
+}
+
+.clay-card {
+  background: #f5f7fa;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    7px 7px 16px rgba(160, 172, 195, 0.22),
+    -5px -5px 12px rgba(255, 255, 255, 0.9),
+    inset 1.5px 1.5px 2px rgba(255, 255, 255, 0.8),
+    inset -1.5px -1.5px 3px rgba(160, 172, 195, 0.08);
+}
+
+.clay-card-flat {
+  background: #eff2f6;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 
+    4px 4px 10px rgba(160, 172, 195, 0.16),
+    -3px -3px 8px rgba(255, 255, 255, 0.85),
+    inset 1px 1px 1.5px rgba(255, 255, 255, 0.7);
+}
+
+.clay-inset {
+  background: #e3e7ee;
+  border-radius: 0.875rem;
+  box-shadow: 
+    inset 2px 2px 4px rgba(160, 172, 195, 0.22),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(160, 172, 195, 0.1);
+}
+
+.clay-btn-red {
+  background: linear-gradient(145deg, #c41e30, #a11424);
+  color: #ffffff;
+  border-radius: 0.875rem;
+  box-shadow: 
+    0 5px 12px rgba(192, 24, 43, 0.26),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.4),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.22);
+  transition: all 0.15s ease-in-out;
+}
+.clay-btn-red:hover {
+  background: linear-gradient(145deg, #ce2336, #aa1626);
+  box-shadow: 
+    0 7px 16px rgba(192, 24, 43, 0.32),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.45),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.22);
+}
+.clay-btn-red:active {
+  transform: scale(0.97);
+  box-shadow: 
+    0 2px 5px rgba(192, 24, 43, 0.25),
+    inset 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.clay-btn-light {
+  background: #f4f6fa;
+  color: #2b303b;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    4px 4px 9px rgba(160, 172, 195, 0.2),
+    -3px -3px 7px rgba(255, 255, 255, 0.9),
+    inset 1.5px 1.5px 2px rgba(255, 255, 255, 0.85),
+    inset -1px -1px 2px rgba(160, 172, 195, 0.1);
+  transition: all 0.15s ease-in-out;
+}
+.clay-btn-light:hover {
+  background: #ebedf2;
+  box-shadow: 
+    5px 5px 11px rgba(160, 172, 195, 0.24),
+    -4px -4px 9px rgba(255, 255, 255, 0.95);
+}
+.clay-btn-light:active {
+  transform: scale(0.97);
+  box-shadow: 
+    inset 2px 2px 4px rgba(160, 172, 195, 0.22),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.8);
+}
+
+.clay-pill-active {
+  background: linear-gradient(145deg, #c41e30, #a11424);
+  color: #ffffff;
+  border-radius: 9999px;
+  box-shadow: 
+    0 3px 8px rgba(192, 24, 43, 0.25),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.4),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.clay-pill-inactive {
+  background: #edf0f5;
+  color: #555e6d;
+  border-radius: 9999px;
+  box-shadow: 
+    3px 3px 6px rgba(160, 172, 195, 0.18),
+    -2px -2px 5px rgba(255, 255, 255, 0.85),
+    inset 1px 1px 1.5px rgba(255, 255, 255, 0.8);
+}
+.clay-pill-inactive:hover {
+  background: #e4e8ef;
+  color: #1a1e24;
 }

@@ -29,6 +29,8 @@ const config: Config = {
       fontFamily: {
         sans: ["'Poppins'", "sans-serif"],
         display: ["'Playfair Display'", "serif"],
+        price: ["'Inter'", "'Poppins'", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
+        num: ["'Inter'", "'Poppins'", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
       },
       maxWidth: {
         site: "1280px",

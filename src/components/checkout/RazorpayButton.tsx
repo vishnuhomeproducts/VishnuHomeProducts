@@ -214,10 +214,17 @@ export const RazorpayButton: React.FC<RazorpayButtonProps> = ({
     }
   };
 
-  const saveOrderToHistory = (order: any) => {
+  const saveOrderToHistory = async (order: any) => {
     try {
       const existing = JSON.parse(localStorage.getItem('vishnu-orders') || '[]');
       localStorage.setItem('vishnu-orders', JSON.stringify([order, ...existing]));
+
+      // Save to backend orders store & admin hub
+      await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+      });
     } catch (e) {
       // ignore storage errors
     }
