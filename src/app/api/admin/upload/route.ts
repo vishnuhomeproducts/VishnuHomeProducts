@@ -65,3 +65,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'Image upload failed' }, { status: 500 });
   }
 }
+
