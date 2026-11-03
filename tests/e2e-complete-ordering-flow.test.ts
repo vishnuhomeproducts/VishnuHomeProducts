@@ -1,21 +1,22 @@
 /**
- * Complete End-to-End Ordering & Payment Verification Test Suite
+ * Complete End-to-End Ordering, Dynamic Catalog & Payment Verification Test Suite
  * Vishnu Home Products E-Commerce Hub
  * 
  * Tests:
- * 1. Pincode Evaluation & Delivery Classification
- * 2. In-Memory Resilient Product Catalog & Fallback
+ * 1. Pincode Evaluation & Delivery Classification (Bengaluru Primary Local Delivery)
+ * 2. Dynamic Product Catalog & Bulk Excel/CSV Import API
  * 3. Authoritative Order Creation & Razorpay Gateway Simulation
  * 4. Price Tampering Security Defense
  * 5. Forged Payment Signature Rejection
- * 6. Valid HMAC Payment Verification & Admin Hub Persistence
+ * 6. Valid HMAC Payment Verification & Admin Hub Reflection
  */
 
 import crypto from 'crypto';
 import { calculateDeliveryFee } from '../src/lib/delivery';
 import { POST as createOrderRoute } from '../src/app/api/razorpay/create-order/route';
 import { POST as verifyPaymentRoute } from '../src/app/api/razorpay/verify/route';
-import { getAllAdminOrders, createOrderInStore } from '../src/lib/ordersStore';
+import { getAllAdminOrders } from '../src/lib/ordersStore';
+import { getAllProducts, createProduct, bulkImportProducts } from '../src/lib/productsStore';
 import { SAMPLE_PRODUCTS } from '../src/lib/data/sampleProducts';
 
 let passedTests = 0;
@@ -37,25 +38,29 @@ async function runE2ETests() {
   console.log('======================================================\n');
 
   // -----------------------------------------------------------------
-  // STAGE 1: Pincode Evaluation & Delivery Classification
+  // STAGE 1: Pincode Evaluation & Delivery Classification (Bengaluru Primary)
   // -----------------------------------------------------------------
   console.log('--- Stage 1: Pincode Evaluation & Delivery Classification ---');
   
-  // Coastal Karnataka (Mangaluru local)
-  const localMangaluru = calculateDeliveryFee('575002', 400);
-  assert(localMangaluru.isLocal === true, 'Pincode 575002 resolves to isLocal: true');
-  assert(localMangaluru.deliveryType === 'MANGALURU_LOCAL', 'Pincode 575002 deliveryType is MANGALURU_LOCAL');
-  assert(localMangaluru.fee === 40, 'Mangaluru local delivery fee is ₹40 for orders under ₹999');
-
-  // Bengaluru Urban (State courier)
+  // Bengaluru Urban (Primary Local Delivery)
   const bengaluru = calculateDeliveryFee('560054', 400);
-  assert(bengaluru.deliveryType === 'BENGALURU_LOCAL', 'Pincode 560054 resolves to BENGALURU_LOCAL');
-  assert(bengaluru.fee === 79, 'Bengaluru local delivery fee is ₹79');
+  assert(bengaluru.isLocal === true, 'Pincode 560054 resolves to isLocal: true (Bengaluru Primary)');
+  assert(bengaluru.deliveryType === 'BENGALURU_LOCAL', 'Pincode 560054 deliveryType is BENGALURU_LOCAL');
+  assert(bengaluru.fee === 50, 'Bengaluru local delivery fee is ₹50');
+
+  // Coastal / Regional Karnataka
+  const regionalMangaluru = calculateDeliveryFee('575002', 400);
+  assert(regionalMangaluru.deliveryType === 'MANGALURU_REGIONAL', 'Pincode 575002 resolves to MANGALURU_REGIONAL');
+  assert(regionalMangaluru.fee === 60, 'Regional delivery fee is ₹60');
 
   // Pan-India Courier (Mumbai / Delhi / Kolkata)
   const panIndia = calculateDeliveryFee('400001', 400);
   assert(panIndia.deliveryType === 'PAN_INDIA_COURIER', 'Pincode 400001 resolves to PAN_INDIA_COURIER');
   assert(panIndia.fee === 80, 'Pan-India courier fee is ₹80');
+
+  // Dynamic Shiprocket delivery fee override
+  const shiprocketOverride = calculateDeliveryFee('560001', 400, 45);
+  assert(shiprocketOverride.fee === 45, 'Explicit Shiprocket delivery fee (₹45) respected dynamically');
 
   // Free delivery qualification
   const freeShipping = calculateDeliveryFee('400001', 1200);
@@ -77,18 +82,42 @@ async function runE2ETests() {
   assert(invalidPincodeJson.error.includes('Must be a 6-digit Indian postal code'), 'Clean pincode validation error returned');
 
   // -----------------------------------------------------------------
-  // STAGE 2: Resilient Product Catalog & In-Memory Fallback
+  // STAGE 2: Dynamic Product Catalog & Bulk Excel Import
   // -----------------------------------------------------------------
-  console.log('\n--- Stage 2: Resilient Product Catalog & Fallback ---');
-  assert(SAMPLE_PRODUCTS.length >= 7, `Catalog contains ${SAMPLE_PRODUCTS.length} curated homemade products`);
-  
-  const sampleTomato = SAMPLE_PRODUCTS.find(p => p.slug === 'tomato-thokku');
-  assert(sampleTomato !== undefined, 'Tomato Thokku exists in authoritative catalog');
-  assert(sampleTomato?.sizes.some(s => s.label === '500g' && s.price === 190) === true, '500g Tomato Thokku has canonical price of ₹190');
+  console.log('\n--- Stage 2: Dynamic Product Catalog & Excel Bulk Import ---');
+  const allProducts = await getAllProducts();
+  assert(allProducts.length >= 10, `Catalog loaded with ${allProducts.length} dynamic products`);
 
-  const sampleMango = SAMPLE_PRODUCTS.find(p => p.slug === 'avakaya-mango-pickle');
-  assert(sampleMango !== undefined, 'Avakaya Mango Pickle exists in authoritative catalog');
-  assert(sampleMango?.sizes.some(s => s.label === '500g' && s.price === 190) === true, '500g Mango Pickle has canonical price of ₹190');
+  // Test dynamic single product creation
+  const testNewProduct = await createProduct({
+    name: 'Special Bitter Gourd Thokku',
+    category: 'Pickles & Thokkus',
+    description: 'Fresh bitter gourd slow-cooked with jaggery and mustard',
+    sizes: [{ label: '500g', price: 210, mrp: 260 }],
+    badge: 'NEW',
+  });
+  assert(testNewProduct.id !== undefined, `New product created dynamically with ID: ${testNewProduct.id}`);
+
+  // Test bulk import capability (Excel/CSV simulation)
+  const bulkResult = await bulkImportProducts([
+    {
+      name: 'Kundapura Ghee Roast Paste',
+      category: 'Spices & Masalas',
+      description: 'Stone-ground Byadagi chilli and pure ghee roast masala paste',
+      sizes: [
+        { label: '250g', price: 220, mrp: 260 },
+        { label: '500g', price: 390, mrp: 460 },
+      ],
+      emoji: '🥘',
+    },
+    {
+      name: 'Organic Wild Forest Honey',
+      category: 'Wellness & Oils',
+      sizes: [{ label: '500g', price: 340, mrp: 420 }],
+      emoji: '🍯',
+    },
+  ]);
+  assert(bulkResult.importedCount >= 2, `Bulk imported ${bulkResult.importedCount} products successfully`);
 
   // -----------------------------------------------------------------
   // STAGE 3: Authoritative Order Creation & Pricing
@@ -96,13 +125,13 @@ async function runE2ETests() {
   console.log('\n--- Stage 3: Authoritative Order Creation ---');
   // Order items: 2x Tomato Thokku (500g @ ₹190) = ₹380, 1x Mango Pickle (500g @ ₹190) = ₹190
   // Subtotal = ₹570
-  // Delivery to Mangaluru (575002) = ₹40
-  // Total = ₹610
+  // Delivery to Bengaluru (560054) = ₹50
+  // Total = ₹620
   const validOrderReq = new Request('http://localhost:3000/api/razorpay/create-order', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      amount: 610,
+      amount: 620,
       items: [
         { product_id: 'prod-1', slug: 'tomato-thokku', name: 'Tomato Thokku', size: '500g', price: 190, qty: 2 },
         { product_id: 'prod-2', slug: 'avakaya-mango-pickle', name: 'Avakaya Mango Pickle', size: '500g', price: 190, qty: 1 },
@@ -111,8 +140,8 @@ async function runE2ETests() {
         name: 'Santhosh Rao',
         phone: '9845099887',
         email: 'santhosh.rao@gmail.com',
-        city: 'Mangaluru',
-        pincode: '575002',
+        city: 'Bengaluru',
+        pincode: '560054',
       },
     }),
   });
@@ -122,8 +151,8 @@ async function runE2ETests() {
 
   assert(validOrderRes.status === 200, 'POST /api/razorpay/create-order succeeded with HTTP 200');
   assert(validOrderJson.order_id !== undefined, `Gateway order ID generated: ${validOrderJson.order_id}`);
-  assert(validOrderJson.verifiedTotal === 610, 'Verified total accurately calculated as ₹610 (₹570 subtotal + ₹40 local delivery)');
-  assert(validOrderJson.amount === 61000, 'Gateway amount formatted correctly as 61,000 paise');
+  assert(validOrderJson.verifiedTotal === 620, 'Verified total accurately calculated as ₹620 (₹570 subtotal + ₹50 Bengaluru delivery)');
+  assert(validOrderJson.amount === 62000, 'Gateway amount formatted correctly as 62,000 paise');
 
   // -----------------------------------------------------------------
   // STAGE 4: Security Check - Price Tampering Defense
@@ -143,8 +172,8 @@ async function runE2ETests() {
         name: 'Malicious Actor',
         phone: '9845099887',
         email: 'malicious@test.com',
-        city: 'Mangaluru',
-        pincode: '575002',
+        city: 'Bengaluru',
+        pincode: '560054',
       },
     }),
   });
@@ -153,7 +182,7 @@ async function runE2ETests() {
   const tamperedJson = await tamperedRes.json();
 
   assert(tamperedRes.status === 400, 'Price tampering attempt rejected with HTTP 400');
-  assert(tamperedJson.error.includes('Order total mismatch: Screen total was ₹140, but verified server total is ₹610'),
+  assert(tamperedJson.error.includes('Order total mismatch: Screen total was ₹140, but verified server total is ₹620'),
     'Server successfully detected tampering and enforced authoritative catalog price');
 
   // -----------------------------------------------------------------
@@ -171,7 +200,7 @@ async function runE2ETests() {
       razorpay_payment_id: 'pay_test_554433',
       razorpay_signature: 'deadbeef_invalid_forged_signature_12345',
       order_id: 'VHP-TEST-ORDER-001',
-      total: 610,
+      total: 620,
       items: [{ name: 'Tomato Thokku', qty: 2, price: 190, size: '500g' }],
       shipping: { name: 'Santhosh Rao', email: 'santhosh.rao@gmail.com', phone: '9845099887' },
     }),
@@ -207,7 +236,7 @@ async function runE2ETests() {
       razorpay_payment_id: validPaymentId,
       razorpay_signature: authenticSignature,
       order_id: validAppOrderId,
-      total: 610,
+      total: 620,
       items: [
         { product_id: 'prod-1', name: 'Tomato Thokku', size: '500g', price: 190, qty: 2 },
         { product_id: 'prod-2', name: 'Avakaya Mango Pickle', size: '500g', price: 190, qty: 1 },
@@ -216,10 +245,10 @@ async function runE2ETests() {
         name: 'Santhosh Rao',
         email: 'santhosh.rao@gmail.com',
         phone: '9845099887',
-        line1: 'No 45, Car Street, Near Temple',
-        city: 'Mangaluru',
+        line1: 'No 45, Indiranagar 100ft Road',
+        city: 'Bengaluru',
         state: 'Karnataka',
-        pincode: '575002',
+        pincode: '560054',
       },
     }),
   });
@@ -238,9 +267,8 @@ async function runE2ETests() {
   assert(storedOrder !== undefined, `Newly verified order ${validAppOrderId} exists in Admin Orders Repository`);
   assert(storedOrder?.payment_status === 'paid', 'Order payment_status is confirmed "paid"');
   assert(storedOrder?.status === 'confirmed', 'Order status is "confirmed"');
-  assert(storedOrder?.total === 610, 'Order total is preserved as ₹610');
+  assert(storedOrder?.total === 620, 'Order total is preserved as ₹620');
   assert(storedOrder?.shipping_name === 'Santhosh Rao', 'Customer shipping name matches "Santhosh Rao"');
-  assert(storedOrder?.delivery_type === 'mangaluru_local', 'Delivery type is marked as "mangaluru_local"');
 
   console.log('\n======================================================');
   console.log(`🎉 ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY!`);

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { razorpay } from '@/lib/razorpay';
-import { SAMPLE_PRODUCTS } from '@/lib/data/sampleProducts';
+import { getAllProducts } from '@/lib/productsStore';
 import { calculateDeliveryFee } from '@/lib/delivery';
 
 export async function POST(req: Request) {
@@ -28,9 +28,10 @@ export async function POST(req: Request) {
     }
 
     // 2. Authoritative Server Pricing Verification (Price Tampering Defense)
+    const catalogProducts = await getAllProducts();
     let verifiedSubtotal = 0;
     for (const item of items) {
-      const product = SAMPLE_PRODUCTS.find(
+      const product = catalogProducts.find(
         (p) => p.id === item.product_id || p.slug === item.slug || p.name === item.name
       );
 
@@ -46,7 +47,8 @@ export async function POST(req: Request) {
       }
     }
 
-    const { fee: verifiedDeliveryFee, deliveryType } = calculateDeliveryFee(pincode, verifiedSubtotal);
+    const clientDeliveryFee = typeof shipping?.delivery_fee === 'number' ? shipping.delivery_fee : undefined;
+    const { fee: verifiedDeliveryFee, deliveryType } = calculateDeliveryFee(pincode, verifiedSubtotal, clientDeliveryFee);
     
     // Calculate coupon discount
     let verifiedDiscount = 0;

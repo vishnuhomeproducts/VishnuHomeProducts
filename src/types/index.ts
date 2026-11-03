@@ -6,6 +6,8 @@ export interface SizeOption {
   mrp: number;
 }
 
+export type ProductSize = SizeOption;
+
 export interface Product {
   id: string;
   name: string;

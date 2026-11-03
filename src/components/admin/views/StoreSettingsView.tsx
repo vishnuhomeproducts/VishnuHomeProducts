@@ -319,6 +319,87 @@ export const StoreSettingsView: React.FC = () => {
           </div>
         </div>
 
+        {/* Media & Cloudinary CDN Compression */}
+        <div className="clay-card p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="font-bold text-xs uppercase tracking-wider text-brandText flex items-center gap-2">
+              <span className="text-base">☁️</span>
+              <span>Cloudinary CDN &amp; Image Compression Bridge</span>
+            </h4>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800">
+              Zero DB Egress
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-500">
+            Automatically compresses product photos into modern WebP format (<code className="font-mono text-brandRed">f_auto, q_auto:good</code>) with 25 GB free monthly CDN bandwidth. Ensures Supabase / database egress bandwidth remains at <strong>0 KB</strong>.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">Cloud Name</label>
+              <input
+                type="text"
+                placeholder="e.g. vishnu-home"
+                defaultValue={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || ''}
+                className="w-full px-3.5 py-2 clay-inset text-brandText font-mono focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">API Key</label>
+              <input
+                type="text"
+                placeholder="Configured in .env / Vercel"
+                className="w-full px-3.5 py-2 clay-inset text-brandText font-mono focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">API Secret</label>
+              <input
+                type="password"
+                placeholder="••••••••••••••••"
+                className="w-full px-3.5 py-2 clay-inset text-brandText font-mono focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Shiprocket Logistics Integration */}
+        <div className="clay-card p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="font-bold text-xs uppercase tracking-wider text-brandText flex items-center gap-2">
+              <Truck className="w-4 h-4 text-brandRed" />
+              <span>Shiprocket Courier &amp; Fulfillment API</span>
+            </h4>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+              Ready for Credentials
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-500">
+            Automated AWB generation, pickup scheduling, and live tracking across 29,000+ pincodes via Shiprocket. Bengaluru local deliveries route automatically with express dispatch.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">Shiprocket Account Email</label>
+              <input
+                type="email"
+                placeholder="shiprocket@vishnuhome.in"
+                className="w-full px-3.5 py-2 clay-inset text-brandText focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">Shiprocket Password / Token</label>
+              <input
+                type="password"
+                placeholder="••••••••••••••••"
+                className="w-full px-3.5 py-2 clay-inset text-brandText font-mono focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="flex justify-end pt-2">
           <button
             type="submit"
