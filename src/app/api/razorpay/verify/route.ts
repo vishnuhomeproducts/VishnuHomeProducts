@@ -30,12 +30,37 @@ export async function POST(req: Request) {
       }
     }
 
+    // Always persist to local/memory order store and Admin Hub
+    const appOrderId = order_id || `VHP-${Date.now().toString().slice(-8)}`;
+    try {
+      const { createOrderInStore } = await import('@/lib/ordersStore');
+      await createOrderInStore({
+        id: appOrderId,
+        order_number: appOrderId,
+        items,
+        subtotal: total,
+        total,
+        status: 'confirmed',
+        payment_status: 'paid',
+        payment_method: 'razorpay',
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+        shipping_name: shipping?.name || '',
+        shipping_phone: shipping?.phone || '',
+        shipping_email: shipping?.email || '',
+        shipping_address: shipping || {},
+      });
+    } catch (storeErr) {
+      console.warn('Store order insert note:', storeErr);
+    }
+
     // Persist to Supabase if database connection is available
     try {
       const supabase = createAdminClient();
       await supabase.from('orders').insert([
         {
-          id: order_id || undefined,
+          id: appOrderId,
           items,
           subtotal: total,
           total,
@@ -75,7 +100,11 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Payment verified and order recorded' });
+    return NextResponse.json({
+      success: true,
+      app_order_id: appOrderId,
+      message: 'Payment verified and order recorded',
+    });
   } catch (error: any) {
     console.error('Payment verification error:', error);
     return NextResponse.json({ error: 'Payment verification failed' }, { status: 500 });

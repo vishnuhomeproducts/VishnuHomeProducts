@@ -231,7 +231,9 @@ declare global {
   var __vishnu_in_flight_carts: AbandonedCart[] | undefined;
 }
 
-const DATA_FILE_PATH = path.join(process.cwd(), '.next', 'vishnu_orders_cache.json');
+const DATA_FILE_PATH = process.env.VERCEL
+  ? path.join('/tmp', 'vishnu_orders_cache.json')
+  : path.join(process.cwd(), '.next', 'vishnu_orders_cache.json');
 
 function loadPersistedOrders(): AdminOrder[] {
   if (global.__vishnu_admin_orders && global.__vishnu_admin_orders.length > 0) {
@@ -396,6 +398,32 @@ export async function createOrderInStore(orderData: Partial<AdminOrder>): Promis
     // Non-fatal
   }
 
+  // Sync new orders to Google Sheets if configured
+  if (process.env.GOOGLE_SHEETS_WEBHOOK_URL) {
+    try {
+      fetch(process.env.GOOGLE_SHEETS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'new_order',
+          timestamp: new Date().toISOString(),
+          order_id: newOrder.id,
+          customer_name: newOrder.shipping_name,
+          customer_phone: newOrder.shipping_phone,
+          customer_email: newOrder.shipping_email,
+          city: newOrder.shipping_address?.city,
+          pincode: newOrder.shipping_address?.pincode,
+          items: newOrder.items.map(i => `${i.name} (${i.size || ''}) x${i.qty}`).join(', '),
+          total: newOrder.total,
+          payment_status: newOrder.payment_status,
+          status: newOrder.status,
+        }),
+      }).catch(() => {});
+    } catch (sheetErr) {
+      // Non-blocking background sync
+    }
+  }
+
   return newOrder;
 }
 
@@ -426,6 +454,28 @@ export async function updateOrderInStore(
     }).eq('id', id);
   } catch (e) {
     // Non-fatal
+  }
+
+  // Sync new orders to Google Sheets if configured
+  if (process.env.GOOGLE_SHEETS_WEBHOOK_URL) {
+    try {
+      fetch(process.env.GOOGLE_SHEETS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'order_update',
+          timestamp: new Date().toISOString(),
+          order_id: updatedOrder.id,
+          customer_name: updatedOrder.shipping_name,
+          payment_status: updatedOrder.payment_status,
+          status: updatedOrder.status,
+          tracking_awb: updatedOrder.tracking_awb,
+          admin_notes: updatedOrder.admin_notes,
+        }),
+      }).catch(() => {});
+    } catch (sheetErr) {
+      // Non-blocking background sync
+    }
   }
 
   return updatedOrder;
