@@ -3,14 +3,17 @@
 import React, { useState } from 'react';
 import {
   Printer,
-  Truck,
-  MapPin,
-  Clock,
   Trash2,
-  Edit2,
+  Clock,
+  Eye,
+  Copy,
+  Check,
+  ShoppingBag,
+  ExternalLink,
 } from 'lucide-react';
 import { AdminOrder, OrderFulfillmentStatus } from '@/types/admin';
 import { formatINR } from '@/lib/utils';
+import { OrderDetailModal } from '@/components/admin/OrderDetailModal';
 
 interface OrdersViewProps {
   orders: AdminOrder[];
@@ -37,10 +40,10 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
   const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'mangaluru_local' | 'pan_india_courier'>('all');
   // Selected order IDs for bulk operations
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
-  // Tracking edit popover state
-  const [editingAwbOrderId, setEditingAwbOrderId] = useState<string | null>(null);
-  const [courierInput, setCourierInput] = useState('Delhivery Surface');
-  const [awbInput, setAwbInput] = useState('');
+  // Selected Order for Detail Modal
+  const [selectedOrderForModal, setSelectedOrderForModal] = useState<AdminOrder | null>(null);
+  // Copied indicator state
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
 
   // Tab Filtering
   const filteredByTab = orders.filter((o) => {
@@ -59,7 +62,9 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
   });
 
   const activeCount = orders.filter((o) => !o.is_archived).length;
-  const pendingCount = orders.filter((o) => !o.is_archived && (o.payment_status === 'unpaid' || o.payment_status === 'pending_verification')).length;
+  const pendingCount = orders.filter(
+    (o) => !o.is_archived && (o.payment_status === 'unpaid' || o.payment_status === 'pending_verification')
+  ).length;
   const archivedCount = orders.filter((o) => o.is_archived).length;
 
   const localCount = filteredByTab.filter((o) => o.delivery_type === 'mangaluru_local').length;
@@ -73,7 +78,8 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
     }
   };
 
-  const handleToggleSelect = (id: string) => {
+  const handleToggleSelect = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (selectedOrderIds.includes(id)) {
       setSelectedOrderIds(selectedOrderIds.filter((item) => item !== id));
     } else {
@@ -81,9 +87,11 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
     }
   };
 
-  const handleSaveTracking = (orderId: string) => {
-    onUpdateCourier(orderId, courierInput, awbInput);
-    setEditingAwbOrderId(null);
+  const handleCopyOrderNumber = (orderNumber: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(orderNumber);
+    setCopiedOrderId(orderNumber);
+    setTimeout(() => setCopiedOrderId(null), 2000);
   };
 
   return (
@@ -93,7 +101,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={() => setActiveMainTab('active')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all ${
               activeMainTab === 'active' ? 'clay-btn-red' : 'clay-btn-light text-brandText2'
             }`}
           >
@@ -109,7 +117,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
 
           <button
             onClick={() => setActiveMainTab('pending')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all ${
               activeMainTab === 'pending' ? 'clay-btn-red' : 'clay-btn-light text-brandText2'
             }`}
           >
@@ -126,13 +134,12 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
 
           <button
             onClick={() => setActiveMainTab('archived')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all ${
               activeMainTab === 'archived' ? 'clay-btn-red' : 'clay-btn-light text-brandText2'
             }`}
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Recycle Bin</span>
-            <span className="sm:hidden">Bin</span>
+            <span>Recycle Bin</span>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold">
               {archivedCount}
             </span>
@@ -147,11 +154,11 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
             onChange={(e) => handleSelectAll(e.target.checked)}
             className="w-4 h-4 rounded text-brandRed focus:ring-brandRed"
           />
-          <span>Select All ({displayedOrders.length})</span>
+          <span className="font-medium">Select All ({displayedOrders.length})</span>
         </label>
       </div>
 
-      {/* 3. Delivery Sub-Filter Pills (Clay Pills) */}
+      {/* 2. Delivery Sub-Filter Pills */}
       <div className="flex items-center gap-2.5 pt-1 overflow-x-auto pb-1">
         <button
           onClick={() => setDeliveryFilter('all')}
@@ -195,8 +202,8 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
         </button>
       </div>
 
-      {/* 4. Orders List Cards (Soft Tactile Clay Cards) */}
-      <div className="space-y-4 pt-1">
+      {/* 3. Streamlined, Highly Legible Order Cards */}
+      <div className="space-y-3 pt-1">
         {displayedOrders.length === 0 ? (
           <div className="clay-card p-12 text-center space-y-3">
             <div className="w-14 h-14 rounded-2xl clay-card-flat text-brandRed flex items-center justify-center mx-auto text-2xl">
@@ -204,50 +211,69 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
             </div>
             <h3 className="font-display font-bold text-base text-brandText">No Orders in this View</h3>
             <p className="text-xs text-brandText2 max-w-sm mx-auto">
-              There are currently no orders matching your selected filters. Create a manual order or refresh the gateway.
+              There are currently no orders matching your selected filter.
             </p>
           </div>
         ) : (
           displayedOrders.map((order) => {
             const isSelected = selectedOrderIds.includes(order.id);
-            const isEditingAwb = editingAwbOrderId === order.id;
+            const totalItemCount = order.items.reduce((s, i) => s + i.qty, 0);
 
             return (
               <div
                 key={order.id}
-                className={`clay-card p-4 sm:p-5 space-y-4 transition-all ${
+                onClick={() => setSelectedOrderForModal(order)}
+                className={`clay-card p-4 sm:p-4.5 cursor-pointer hover:border-brandRed/40 transition-all space-y-3 ${
                   isSelected ? 'ring-2 ring-brandRed' : ''
                 }`}
               >
-                {/* Order Top Bar: Checkbox, Order ID, Delivery Badge, Date & Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-white/60">
-                  <div className="flex items-center gap-3 flex-wrap">
+                {/* ---------------------------------------------------- */}
+                {/* LINE 1: High-Contrast Order #, Badges, Date, Actions  */}
+                {/* ---------------------------------------------------- */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-white/60">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    {/* Checkbox */}
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={() => handleToggleSelect(order.id)}
-                      className="w-4 h-4 rounded text-brandRed focus:ring-brandRed"
+                      onClick={(e) => handleToggleSelect(order.id, e)}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded text-brandRed focus:ring-brandRed cursor-pointer"
                     />
 
-                    {/* Order ID badge in Soft Clay style */}
-                    <div className="px-3 py-1 rounded-lg clay-card-flat text-brandRed font-mono font-bold text-xs tracking-tight">
-                      {order.order_number}
+                    {/* HIGH CONTRAST ORDER NUMBER (CRYSTAL CLEAR) */}
+                    <div className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1 rounded-lg shadow-sm border border-slate-800">
+                      <span className="font-mono font-black text-xs sm:text-sm tracking-wide">
+                        {order.order_number}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyOrderNumber(order.order_number, e)}
+                        className="p-0.5 rounded text-slate-300 hover:text-white"
+                        title="Copy Order ID"
+                      >
+                        {copiedOrderId === order.order_number ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
                     </div>
 
-                    {/* Delivery type pill */}
-                    <div className="px-3 py-1 rounded-full text-[11px] font-semibold clay-card-flat flex items-center gap-1 text-brandText">
-                      <span>{order.delivery_type === 'mangaluru_local' ? '🛵 Mangaluru Local' : '🇮🇳 Pan-India Courier'}</span>
-                    </div>
+                    {/* Delivery Type Badge */}
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold clay-card-flat text-brandText">
+                      {order.delivery_type === 'mangaluru_local' ? '🛵 Mangaluru Local' : '🇮🇳 Pan-India Courier'}
+                    </span>
 
-                    {/* Expected delivery target */}
+                    {/* Target Time if available */}
                     {order.expected_delivery && (
-                      <span className="text-[11px] font-medium text-brandText2 clay-card-flat px-2.5 py-1 rounded-lg">
-                        Target: <strong>{order.expected_delivery}</strong>
+                      <span className="text-[11px] font-semibold text-slate-600 clay-card-flat px-2 py-0.5 rounded-md">
+                        Target: {order.expected_delivery}
                       </span>
                     )}
 
-                    {/* Order Placement Time */}
-                    <span className="text-[11px] text-slate-500">
+                    {/* Date & Time */}
+                    <span className="text-[11px] font-medium text-slate-500">
                       {new Date(order.created_at).toLocaleString('en-IN', {
                         day: '2-digit',
                         month: 'short',
@@ -257,13 +283,13 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                     </span>
                   </div>
 
-                  {/* Right side: Status Dropdown & Clay Action Icons */}
-                  <div className="flex items-center gap-2 self-end sm:self-auto">
-                    {/* Status Select */}
+                  {/* Right side: Status Dropdown & Action Buttons */}
+                  <div className="flex items-center gap-2 self-end sm:self-auto" onClick={(e) => e.stopPropagation()}>
+                    {/* Fulfillment Status Select */}
                     <select
                       value={order.status}
                       onChange={(e) => onUpdateStatus(order.id, e.target.value as OrderFulfillmentStatus)}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-xl border-none focus:outline-none transition-all shadow-xs ${
+                      className={`text-xs font-bold px-3 py-1.5 rounded-xl border-none focus:outline-none transition-all shadow-xs cursor-pointer ${
                         order.status === 'delivered'
                           ? 'bg-emerald-100 text-emerald-800'
                           : order.status === 'shipped' || order.status === 'packed'
@@ -279,171 +305,130 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
                       <option value="packed">Packed & Ready</option>
-                      <option value="shipped">Shipped (In Transit)</option>
+                      <option value="shipped">Shipped</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
 
-                    {/* Print Packing Slip / Invoice */}
+                    {/* View Details Button */}
                     <button
-                      onClick={() => onPrintInvoice(order)}
-                      className="p-2 rounded-xl clay-btn-light text-brandText"
-                      title="Print Tax Invoice & Shipping Slip"
+                      type="button"
+                      onClick={() => setSelectedOrderForModal(order)}
+                      className="px-2.5 py-1.5 rounded-xl clay-btn-light text-slate-700 hover:text-brandRed text-xs font-bold inline-flex items-center gap-1 shadow-xs"
+                      title="View Full Details Dialog"
                     >
-                      <Printer className="w-4 h-4" />
+                      <Eye className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Details</span>
                     </button>
 
-                    {/* Recycle Bin / Archive */}
+                    {/* Print Packing Slip */}
                     <button
+                      type="button"
+                      onClick={() => onPrintInvoice(order)}
+                      className="p-1.5 rounded-xl clay-btn-light text-slate-700 hover:text-brandText shadow-xs"
+                      title="Print Tax Invoice & Shipping Slip"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Move to Recycle Bin */}
+                    <button
+                      type="button"
                       onClick={() => onDeleteOrder(order.id)}
-                      className="p-2 rounded-xl clay-btn-light text-slate-400 hover:text-brandRed"
+                      className="p-1.5 rounded-xl clay-btn-light text-slate-400 hover:text-brandRed shadow-xs"
                       title="Move to Recycle Bin"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
-                {/* Order Middle: Customer Info, Items & Totals Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs">
-                  {/* Customer Information (Columns 1-5): Clay Inset Well */}
-                  <div className="md:col-span-5 space-y-1.5 p-3.5 clay-inset">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      Customer Details
+                {/* ---------------------------------------------------- */}
+                {/* LINE 2: Clean Summary: Customer, Items & Bill Total   */}
+                {/* ---------------------------------------------------- */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center text-xs">
+                  {/* Customer Brief (Cols 1-4) */}
+                  <div className="sm:col-span-4 flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+                      {order.shipping_name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="font-bold text-brandText flex items-center gap-1.5 text-sm">
-                      <span>{order.shipping_name}</span>
-                      <span className="text-slate-500 font-normal text-xs">({order.shipping_phone})</span>
+                    <div className="truncate">
+                      <div className="font-bold text-brandText text-sm truncate flex items-center gap-1">
+                        <span>{order.shipping_name}</span>
+                        {order.shipping_address?.city && (
+                          <span className="text-[11px] font-normal text-slate-400">
+                            ({order.shipping_address.city})
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] font-mono text-slate-500">
+                        {order.shipping_phone}
+                      </div>
                     </div>
-                    <div className="text-brandText2 text-[11px] leading-relaxed flex items-start gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-brandRed shrink-0 mt-0.5" />
-                      <span>
-                        {order.shipping_address?.line1 || ''}{' '}
-                        {order.shipping_address?.line2 ? `${order.shipping_address.line2}, ` : ''}
-                        {order.shipping_address?.city}, {order.shipping_address?.state} - <strong>{order.shipping_address?.pincode}</strong>
+                  </div>
+
+                  {/* Ordered Menu Items (Cols 5-9): Clean, compact string summary */}
+                  <div className="sm:col-span-5 truncate text-slate-700">
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium truncate">
+                      <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 font-bold text-[10px] shrink-0">
+                        {totalItemCount} {totalItemCount === 1 ? 'item' : 'items'}
+                      </span>
+                      <span className="truncate">
+                        {order.items.map((i) => `${i.qty}x ${i.name} (${i.size})`).join(', ')}
                       </span>
                     </div>
-                    {order.admin_notes && (
-                      <div className="pt-1 text-[11px] text-brandRed font-medium italic">
-                        Note: {order.admin_notes}
-                      </div>
-                    )}
                   </div>
 
-                  {/* Ordered Items List (Columns 6-9): Clay Inset Well */}
-                  <div className="md:col-span-5 space-y-1.5 p-3.5 clay-inset">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      Ordered Products ({order.items.reduce((s, i) => s + i.qty, 0)} items)
-                    </div>
-                    <div className="space-y-1">
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-brandText">
-                          <div className="flex items-center gap-1.5 truncate">
-                            <span className="text-sm shrink-0">{item.emoji || '📦'}</span>
-                            <span className="font-semibold text-brandRed">{item.qty}x</span>
-                            <span className="truncate">{item.name}</span>
-                            <span className="text-slate-500 text-[11px]">({item.size})</span>
-                          </div>
-                          <span className="font-bold font-price text-brandText shrink-0 ml-2">
-                            {formatINR(item.unit_price * item.qty)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Total Bill & Payment Status (Columns 10-12): Clay Card Flat */}
-                  <div className="md:col-span-2 flex flex-col justify-between p-3.5 clay-card-flat text-right">
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        Total Bill
-                      </div>
-                      <div className="font-price font-extrabold text-xl sm:text-2xl text-brandRed tracking-tight mt-0.5">
+                  {/* Total Bill & Payment Pill (Cols 10-12) */}
+                  <div className="sm:col-span-3 flex items-center justify-end gap-3">
+                    <div className="text-right">
+                      <div className="font-price font-extrabold text-base sm:text-lg text-slate-900 tracking-tight">
                         {formatINR(order.total)}
                       </div>
                     </div>
 
-                    <div className="pt-2">
-                      <span
-                        className={`inline-block text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full shadow-xs ${
-                          order.payment_status === 'paid'
-                            ? 'bg-emerald-100 text-brandGreen border border-emerald-300'
-                            : 'bg-red-100 text-brandRed border border-red-300'
-                        }`}
-                      >
-                        {order.payment_method.toUpperCase()} • {order.payment_status.toUpperCase()}
-                      </span>
-                    </div>
+                    <span
+                      className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full shrink-0 ${
+                        order.payment_status === 'paid'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                      }`}
+                    >
+                      {order.payment_method.toUpperCase()} • {order.payment_status.toUpperCase()}
+                    </span>
                   </div>
                 </div>
-
-                {/* Order Footer: Courier Assignment & AWB Tracking */}
-                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs border-t border-white/60">
-                  <div className="flex items-center gap-2 flex-wrap text-brandText2">
-                    <Truck className="w-3.5 h-3.5 text-brandRed" />
-                    <span>Courier Partner: <strong>{order.courier_partner || 'Unassigned'}</strong></span>
-                    {order.tracking_awb ? (
-                      <span className="clay-card-flat text-brandText px-2 py-0.5 rounded-lg font-mono text-[11px]">
-                        AWB: <strong>{order.tracking_awb}</strong>
-                      </span>
-                    ) : (
-                      <span className="text-brandRed italic text-[11px]">No tracking AWB assigned</span>
-                    )}
-
-                    <button
-                      onClick={() => {
-                        setEditingAwbOrderId(isEditingAwb ? null : order.id);
-                        setCourierInput(order.courier_partner || 'Delhivery Surface');
-                        setAwbInput(order.tracking_awb || '');
-                      }}
-                      className="text-brandRed hover:text-red-700 font-semibold text-[11px] inline-flex items-center gap-0.5 ml-1"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                      <span>{isEditingAwb ? 'Cancel' : 'Edit Courier/AWB'}</span>
-                    </button>
-                  </div>
-
-                  <div className="text-slate-400 text-[11px]">
-                    Internal ID: <span className="font-mono">{order.id}</span>
-                  </div>
-                </div>
-
-                {/* Inline AWB Editor */}
-                {isEditingAwb && (
-                  <div className="p-3 clay-inset flex flex-col sm:flex-row items-center gap-2.5 text-xs">
-                    <select
-                      value={courierInput}
-                      onChange={(e) => setCourierInput(e.target.value)}
-                      className="px-3 py-2 bg-white/80 border-none rounded-xl text-xs focus:outline-none"
-                    >
-                      <option value="Delhivery Surface">Delhivery Surface</option>
-                      <option value="Blue Dart Air">Blue Dart Air</option>
-                      <option value="India Post Speed Post">India Post Speed Post</option>
-                      <option value="DTDC Courier">DTDC Courier</option>
-                      <option value="Mangaluru Local Express (Porter/Dunzo)">Mangaluru Local Express (Porter)</option>
-                    </select>
-
-                    <input
-                      type="text"
-                      placeholder="Enter Courier AWB / Waybill #"
-                      value={awbInput}
-                      onChange={(e) => setAwbInput(e.target.value)}
-                      className="flex-1 px-3 py-2 bg-white/80 border-none rounded-xl text-xs font-mono focus:outline-none"
-                    />
-
-                    <button
-                      onClick={() => handleSaveTracking(order.id)}
-                      className="px-4 py-2 clay-btn-red text-xs font-bold"
-                    >
-                      Save Tracking
-                    </button>
-                  </div>
-                )}
               </div>
             );
           })
         )}
       </div>
+
+      {/* ======================================================== */}
+      {/* 4. Rich Order Details Modal (All Detailed Endpoints Data) */}
+      {/* ======================================================== */}
+      <OrderDetailModal
+        order={selectedOrderForModal}
+        isOpen={Boolean(selectedOrderForModal)}
+        onClose={() => setSelectedOrderForModal(null)}
+        onUpdateStatus={(id, status) => {
+          onUpdateStatus(id, status);
+          if (selectedOrderForModal && selectedOrderForModal.id === id) {
+            setSelectedOrderForModal({ ...selectedOrderForModal, status });
+          }
+        }}
+        onUpdateCourier={(id, courier, awb) => {
+          onUpdateCourier(id, courier, awb);
+          if (selectedOrderForModal && selectedOrderForModal.id === id) {
+            setSelectedOrderForModal({
+              ...selectedOrderForModal,
+              courier_partner: courier,
+              tracking_awb: awb,
+            });
+          }
+        }}
+        onPrintInvoice={(order) => onPrintInvoice(order)}
+      />
     </div>
   );
 };
