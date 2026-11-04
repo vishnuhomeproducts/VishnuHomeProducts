@@ -271,13 +271,15 @@ function persistOrders(orders: AdminOrder[]) {
 }
 
 export async function getAllAdminOrders(): Promise<AdminOrder[]> {
-  // Attempt to read from Supabase first if available
-  try {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
+  // Only attempt Supabase if a real configured URL is provided
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl && !supabaseUrl.includes('placeholder') && !supabaseUrl.includes('your-project')) {
+    try {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
 
     if (!error && data && data.length > 0) {
       // Map supabase rows to AdminOrder structure
@@ -315,10 +317,11 @@ export async function getAllAdminOrders(): Promise<AdminOrder[]> {
       const persisted = loadPersistedOrders();
       const existingIds = new Set(dbOrders.map(o => o.id));
       const merged = [...dbOrders, ...persisted.filter(o => !existingIds.has(o.id))];
-      return merged;
+        return merged;
+      }
+    } catch (e) {
+      // fallback
     }
-  } catch (e) {
-    // fallback
   }
 
   return loadPersistedOrders();
@@ -372,30 +375,32 @@ export async function createOrderInStore(orderData: Partial<AdminOrder>): Promis
   const updated = [newOrder, ...currentOrders.filter(o => o.id !== id)];
   persistOrders(updated);
 
-  // Also push to Supabase if available
-  try {
-    const supabase = createAdminClient();
-    await supabase.from('orders').insert([
-      {
-        id: newOrder.id,
-        items: newOrder.items,
-        subtotal: newOrder.subtotal,
-        delivery_fee: newOrder.delivery_fee,
-        discount: newOrder.discount,
-        total: newOrder.total,
-        coupon_code: newOrder.coupon_code,
-        status: newOrder.status,
-        payment_status: newOrder.payment_status,
-        razorpay_order_id: newOrder.razorpay_order_id,
-        razorpay_payment_id: newOrder.razorpay_payment_id,
-        shipping_name: newOrder.shipping_name,
-        shipping_phone: newOrder.shipping_phone,
-        shipping_email: newOrder.shipping_email,
-        shipping_address: newOrder.shipping_address,
-      },
-    ]);
-  } catch (e) {
-    // Non-fatal
+  // Also push to Supabase if valid URL configured
+  if (supabaseUrl && !supabaseUrl.includes('placeholder') && !supabaseUrl.includes('your-project')) {
+    try {
+      const supabase = createAdminClient();
+      await supabase.from('orders').insert([
+        {
+          id: newOrder.id,
+          items: newOrder.items,
+          subtotal: newOrder.subtotal,
+          delivery_fee: newOrder.delivery_fee,
+          discount: newOrder.discount,
+          total: newOrder.total,
+          coupon_code: newOrder.coupon_code,
+          status: newOrder.status,
+          payment_status: newOrder.payment_status,
+          razorpay_order_id: newOrder.razorpay_order_id,
+          razorpay_payment_id: newOrder.razorpay_payment_id,
+          shipping_name: newOrder.shipping_name,
+          shipping_phone: newOrder.shipping_phone,
+          shipping_email: newOrder.shipping_email,
+          shipping_address: newOrder.shipping_address,
+        },
+      ]);
+    } catch (e) {
+      // Non-fatal
+    }
   }
 
   // Sync new orders to Google Sheets if configured
@@ -444,16 +449,19 @@ export async function updateOrderInStore(
   currentOrders[index] = updatedOrder;
   persistOrders([...currentOrders]);
 
-  // Attempt Supabase update
-  try {
-    const supabase = createAdminClient();
-    await supabase.from('orders').update({
-      status: updatedOrder.status,
-      payment_status: updatedOrder.payment_status,
-      updated_at: new Date().toISOString(),
-    }).eq('id', id);
-  } catch (e) {
-    // Non-fatal
+  // Attempt Supabase update if valid URL configured
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl && !supabaseUrl.includes('placeholder') && !supabaseUrl.includes('your-project')) {
+    try {
+      const supabase = createAdminClient();
+      await supabase.from('orders').update({
+        status: updatedOrder.status,
+        payment_status: updatedOrder.payment_status,
+        updated_at: new Date().toISOString(),
+      }).eq('id', id);
+    } catch (e) {
+      // Non-fatal
+    }
   }
 
   // Sync new orders to Google Sheets if configured
