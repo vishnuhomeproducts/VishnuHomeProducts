@@ -194,6 +194,18 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     }
   }, [activeTab]);
 
+  // Close mobile sidebar on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   return (
     <>
       {/* Mobile Backdrop */}

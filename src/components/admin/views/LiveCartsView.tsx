@@ -152,6 +152,18 @@ export const LiveCartsView: React.FC<LiveCartsViewProps> = ({ carts }) => {
   const [internalNote, setInternalNote] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
 
+  // Close modal on Escape key
+  useEffect(() => {
+    if (!modalVisitor) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setModalVisitor(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [modalVisitor]);
+
   // Read real storefront session from localStorage if user is browsing another tab
   useEffect(() => {
     const checkLiveStorefrontSession = () => {
@@ -813,8 +825,14 @@ export const LiveCartsView: React.FC<LiveCartsViewProps> = ({ carts }) => {
 
       {/* 6. VISITOR DETAILS DIALOG MODAL (Requested Popup) */}
       {modalVisitor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden border border-slate-200 animate-slideLeft flex flex-col max-h-[90vh]">
+        <div
+          onClick={() => setModalVisitor(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-fadeIn cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden border border-slate-200 animate-slideLeft flex flex-col max-h-[92vh] cursor-default"
+          >
             {/* Dark Sleek Modal Header */}
             <div className="p-4 sm:p-5 bg-[#121622] text-white flex items-center justify-between border-b border-white/10">
               <div className="flex items-center gap-3">
@@ -835,11 +853,13 @@ export const LiveCartsView: React.FC<LiveCartsViewProps> = ({ carts }) => {
               </div>
 
               <button
+                type="button"
                 onClick={() => setModalVisitor(null)}
-                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
-                title="Close"
+                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1 text-xs font-semibold"
+                title="Close Dialog (or press Esc)"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
+                <span className="text-[10px] font-mono text-slate-400">Esc</span>
               </button>
             </div>
 
@@ -982,12 +1002,12 @@ export const LiveCartsView: React.FC<LiveCartsViewProps> = ({ carts }) => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
+            <div className="p-3.5 sm:p-5 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
               <a
                 href={modalVisitor.currentPage}
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2 rounded-xl clay-btn-light text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5"
+                className="w-full sm:w-auto px-4 py-2 rounded-xl clay-btn-light text-slate-700 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
               >
                 <Eye className="w-3.5 h-3.5 text-brandRed" />
                 <span>Inspect Product Page</span>
@@ -996,9 +1016,9 @@ export const LiveCartsView: React.FC<LiveCartsViewProps> = ({ carts }) => {
               <button
                 type="button"
                 onClick={() => setModalVisitor(null)}
-                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors"
+                className="w-full sm:w-auto px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors text-center"
               >
-                Close
+                Close (Esc)
               </button>
             </div>
           </div>

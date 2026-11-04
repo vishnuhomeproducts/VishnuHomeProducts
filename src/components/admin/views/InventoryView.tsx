@@ -128,6 +128,19 @@ export const InventoryView: React.FC = () => {
     setIsAddEditOpen(true);
   };
 
+  // Close modals on Escape key
+  useEffect(() => {
+    if (!isAddEditOpen && !isBulkOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isAddEditOpen) setIsAddEditOpen(false);
+        if (isBulkOpen) setIsBulkOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAddEditOpen, isBulkOpen]);
+
   // Handle Image Upload (via Cloudinary auto-compress or local bridge)
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -608,8 +621,14 @@ export const InventoryView: React.FC = () => {
       {/* MODAL 1: ADD / EDIT PRODUCT MODAL                        */}
       {/* ======================================================== */}
       {isAddEditOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="clay-card w-full max-w-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200">
+        <div
+          onClick={() => setIsAddEditOpen(false)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="clay-card w-full max-w-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200 cursor-default"
+          >
             <div className="p-4 border-b border-white/60 flex items-center justify-between bg-white/40">
               <div className="flex items-center gap-2">
                 <Boxes className="w-5 h-5 text-brandRed" />
@@ -877,8 +896,14 @@ export const InventoryView: React.FC = () => {
       {/* MODAL 2: BULK EXCEL / CSV IMPORT MODAL                   */}
       {/* ======================================================== */}
       {isBulkOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="clay-card w-full max-w-3xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200">
+        <div
+          onClick={() => setIsBulkOpen(false)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="clay-card w-full max-w-3xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200 cursor-default"
+          >
             <div className="p-4 border-b border-white/60 flex items-center justify-between bg-white/40">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="w-5 h-5 text-emerald-600" />

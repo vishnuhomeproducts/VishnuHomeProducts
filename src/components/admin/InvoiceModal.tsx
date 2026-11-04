@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Printer } from 'lucide-react';
 import { AdminOrder } from '@/types/admin';
 import { formatINR } from '@/lib/utils';
@@ -12,6 +12,18 @@ interface InvoiceModalProps {
 }
 
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, isOpen, onClose }) => {
+  // ESC key dismiss
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !order) return null;
 
   const handlePrint = () => {
@@ -19,8 +31,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, isOpen, onClo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs print:p-0 print:bg-white">
-      <div className="bg-white rounded-card max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-dropdown border border-brandBorder print:border-none print:shadow-none print:max-w-none print:max-h-none print:rounded-none">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs print:p-0 print:bg-white cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-card max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-dropdown border border-brandBorder print:border-none print:shadow-none print:max-w-none print:max-h-none print:rounded-none cursor-default"
+      >
         
         {/* Modal Top Actions (Hidden in print) */}
         <div className="p-4 border-b border-brandBorder flex items-center justify-between sticky top-0 bg-white z-10 print:hidden">

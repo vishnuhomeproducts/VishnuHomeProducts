@@ -51,6 +51,18 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     }
   }, [order]);
 
+  // Handle ESC key to close/go back
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !order) return null;
 
   const copyToClipboard = (text: string, key: string) => {
@@ -91,21 +103,27 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-      <div className="clay-card w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden my-auto shadow-2xl border border-white/80">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="clay-card w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden my-auto shadow-2xl border border-white/80 cursor-default"
+      >
         
         {/* ======================================================== */}
         {/* MODAL HEADER: High Contrast, Prominent Order # & Badges */}
         {/* ======================================================== */}
-        <div className="p-4 sm:p-5 border-b border-white/60 bg-white/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky top-0 z-10 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-brandRed/10 text-brandRed flex items-center justify-center shrink-0">
+        <div className="p-3.5 sm:p-5 border-b border-white/60 bg-white/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky top-0 z-10 backdrop-blur-md">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-brandRed/10 text-brandRed flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
               <Package className="w-5 h-5 text-brandRed" />
             </div>
 
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-black text-base sm:text-lg text-slate-900 tracking-tight bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-300">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono font-black text-sm sm:text-lg text-slate-900 tracking-tight bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-300">
                   {order.order_number}
                 </span>
 
@@ -123,13 +141,13 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 </button>
 
                 {/* Delivery Badge */}
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold clay-card-flat text-brandText">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold clay-card-flat text-brandText whitespace-nowrap">
                   {order.delivery_type === 'mangaluru_local' ? '🛵 Mangaluru Local' : '🇮🇳 Pan-India Courier'}
                 </span>
 
                 {/* Payment Badge */}
                 <span
-                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap ${
                     order.payment_status === 'paid'
                       ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                       : 'bg-amber-100 text-amber-900 border border-amber-300'
@@ -139,12 +157,12 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 </span>
               </div>
 
-              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-2">
-                <Calendar className="w-3.5 h-3.5" />
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+                <Calendar className="w-3.5 h-3.5 shrink-0" />
                 <span>Placed on {formattedDate}</span>
                 {order.expected_delivery && (
                   <>
-                    <span>•</span>
+                    <span className="hidden sm:inline">•</span>
                     <span>Target: <strong>{order.expected_delivery}</strong></span>
                   </>
                 )}
@@ -152,7 +170,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-white/60">
             {/* Quick Invoice Print */}
             <button
               type="button"
@@ -163,13 +181,15 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               <span>Print Slip</span>
             </button>
 
-            {/* Close Button */}
+            {/* Close Button with Esc indicator */}
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+              className="px-2.5 py-1.5 rounded-xl clay-btn-light text-slate-600 hover:text-slate-900 transition-colors inline-flex items-center gap-1 text-xs font-bold"
+              title="Close Dialog (or press Esc)"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
+              <span className="hidden sm:inline text-[11px] font-mono text-slate-400">Esc</span>
             </button>
           </div>
         </div>
@@ -196,7 +216,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <div className="font-bold text-sm text-brandText">{order.shipping_name}</div>
                       <div className="text-slate-500 text-[11px]">{order.shipping_email || 'No email provided'}</div>
@@ -330,7 +350,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       type="button"
                       onClick={handleSaveTracking}
                       disabled={isSavingTracking}
-                      className="clay-btn-red px-3.5 py-1.5 text-xs font-bold inline-flex items-center gap-1.5"
+                      className="clay-btn-red px-3.5 py-2 text-xs font-bold inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
                     >
                       <Save className="w-3.5 h-3.5" />
                       <span>{isSavingTracking ? 'Saving...' : 'Update Courier / AWB'}</span>
@@ -484,13 +504,13 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         {/* ======================================================== */}
         {/* MODAL FOOTER: Live Fulfillment Status Selector           */}
         {/* ======================================================== */}
-        <div className="p-4 border-t border-white/60 bg-white/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky bottom-0 z-10 backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-xs text-slate-700">Update Fulfillment Status:</span>
+        <div className="p-3.5 sm:p-4 border-t border-white/60 bg-white/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky bottom-0 z-10 backdrop-blur-md">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+            <span className="font-bold text-xs text-slate-700">Update Status:</span>
             <select
               value={order.status}
               onChange={(e) => onUpdateStatus(order.id, e.target.value as OrderFulfillmentStatus)}
-              className={`text-xs font-bold px-3 py-1.5 rounded-xl border-none focus:outline-none transition-all shadow-xs ${
+              className={`text-xs font-bold px-3 py-2 sm:py-1.5 rounded-xl border-none focus:outline-none transition-all shadow-xs w-full sm:w-auto ${
                 order.status === 'delivered'
                   ? 'bg-emerald-100 text-emerald-800'
                   : order.status === 'shipped' || order.status === 'packed'
@@ -512,22 +532,22 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </select>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               type="button"
               onClick={() => onPrintInvoice(order)}
-              className="clay-btn-red px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5"
+              className="clay-btn-red flex-1 sm:flex-none px-4 py-2 text-xs font-bold inline-flex items-center justify-center gap-1.5"
             >
               <Printer className="w-4 h-4" />
-              <span>Print Tax Invoice / Slip</span>
+              <span>Print Slip</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="clay-btn-light px-4 py-2 text-xs font-bold text-brandText"
+              className="clay-btn-light flex-1 sm:flex-none px-4 py-2 text-xs font-bold text-brandText text-center"
             >
-              Close
+              Close (Esc)
             </button>
           </div>
         </div>

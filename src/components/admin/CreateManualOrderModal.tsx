@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, ShoppingBag, User, MapPin } from 'lucide-react';
 import { SAMPLE_PRODUCTS } from '@/lib/data/sampleProducts';
 import { formatINR } from '@/lib/utils';
@@ -43,6 +43,18 @@ export const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -169,8 +181,14 @@ export const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-xs">
-      <div className="clay-card max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="clay-card max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl cursor-default"
+      >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-white/60 flex items-center justify-between sticky top-0 clay-bg z-10">
           <div className="flex items-center gap-2">

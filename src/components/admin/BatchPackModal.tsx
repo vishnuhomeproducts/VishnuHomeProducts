@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Printer, Check, Boxes } from 'lucide-react';
 import { AdminOrder } from '@/types/admin';
 
@@ -17,6 +17,18 @@ export const BatchPackModal: React.FC<BatchPackModalProps> = ({
   onClose,
   onMarkBatchPacked,
 }) => {
+  // ESC key dismiss
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   // Aggregate items across all unfulfilled orders
@@ -45,8 +57,14 @@ export const BatchPackModal: React.FC<BatchPackModalProps> = ({
   const totalUnits = summaryList.reduce((acc, curr) => acc + curr.count, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-xs">
-      <div className="clay-card max-w-xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="clay-card max-w-xl w-full max-h-[88vh] overflow-y-auto shadow-2xl cursor-default"
+      >
         
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-white/60 flex items-center justify-between sticky top-0 clay-bg z-10">

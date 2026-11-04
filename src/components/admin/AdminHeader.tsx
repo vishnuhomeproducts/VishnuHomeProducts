@@ -126,10 +126,11 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           {/* Create Manual Order: Red Clay Button */}
           <button
             onClick={onCreateManualOrder}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold clay-btn-red"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-bold clay-btn-red"
           >
             <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>+ Create Manual Order</span>
+            <span className="hidden sm:inline">+ Create Manual Order</span>
+            <span className="sm:hidden">+ Order</span>
           </button>
 
           {/* Batch Pack & Slips: Light Clay with Red Accent */}
