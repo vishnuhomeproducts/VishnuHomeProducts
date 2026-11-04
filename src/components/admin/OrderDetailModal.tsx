@@ -12,12 +12,8 @@ import {
   Mail,
   Calendar,
   CreditCard,
-  FileText,
   Save,
-  ExternalLink,
-  ShieldCheck,
   Package,
-  Layers,
 } from 'lucide-react';
 import { AdminOrder, OrderFulfillmentStatus } from '@/types/admin';
 import { formatINR } from '@/lib/utils';
@@ -44,19 +40,14 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [courierPartner, setCourierPartner] = useState('');
   const [trackingAwb, setTrackingAwb] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
   const [isSavingTracking, setIsSavingTracking] = useState(false);
-  const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [trackingSaved, setTrackingSaved] = useState(false);
-  const [notesSaved, setNotesSaved] = useState(false);
 
   useEffect(() => {
     if (order) {
       setCourierPartner(order.courier_partner || 'Delhivery Surface');
       setTrackingAwb(order.tracking_awb || '');
-      setAdminNotes(order.admin_notes || '');
       setTrackingSaved(false);
-      setNotesSaved(false);
     }
   }, [order]);
 
@@ -68,6 +59,16 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
+  const fullAddressString = [
+    order.shipping_name,
+    order.shipping_address?.line1,
+    order.shipping_address?.line2,
+    `${order.shipping_address?.city || ''}, ${order.shipping_address?.state || ''} - ${order.shipping_address?.pincode || ''}`,
+    `Phone: ${order.shipping_phone}`,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
   const handleSaveTracking = async () => {
     setIsSavingTracking(true);
     try {
@@ -78,27 +79,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       console.error(e);
     } finally {
       setIsSavingTracking(false);
-    }
-  };
-
-  const handleSaveNotes = async () => {
-    setIsSavingNotes(true);
-    try {
-      if (onUpdateNotes) {
-        await onUpdateNotes(order.id, adminNotes);
-      } else {
-        await fetch('/api/admin/orders', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: order.id, admin_notes: adminNotes }),
-        });
-      }
-      setNotesSaved(true);
-      setTimeout(() => setNotesSaved(false), 3000);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSavingNotes(false);
     }
   };
 
@@ -248,8 +228,29 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   </div>
 
                   {/* Delivery Address Box */}
-                  <div className="p-3 clay-inset rounded-xl space-y-1">
-                    <div className="text-[10px] uppercase font-bold text-slate-500">Shipping Address</div>
+                  <div className="p-3.5 clay-inset rounded-xl space-y-2">
+                    <div className="flex items-center justify-between border-b border-slate-200/80 pb-1.5">
+                      <div className="text-[10px] uppercase font-bold text-slate-500">Shipping Address</div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(fullAddressString, 'address')}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 inline-flex items-center gap-1.5 border border-slate-300 shadow-xs transition-colors"
+                        title="Copy Complete Delivery Address"
+                      >
+                        {copiedKey === 'address' ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="text-emerald-700 font-bold">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Copy Address</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                     <div className="text-brandText text-xs leading-relaxed font-medium">
                       {order.shipping_address?.line1 || ''}{' '}
                       {order.shipping_address?.line2 ? `${order.shipping_address.line2}, ` : ''}
@@ -335,41 +336,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       <span>{isSavingTracking ? 'Saving...' : 'Update Courier / AWB'}</span>
                     </button>
                   </div>
-                </div>
-              </div>
-
-              {/* Admin Internal Notes Box */}
-              <div className="clay-card p-4 space-y-2">
-                <div className="flex items-center justify-between border-b border-white/60 pb-2">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-brandRed" />
-                    <span>Internal Kitchen / Packaging Notes</span>
-                  </div>
-                  {notesSaved && (
-                    <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Saved!
-                    </span>
-                  )}
-                </div>
-
-                <textarea
-                  rows={2}
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder="e.g. Customer requested mild oil on top. Bubble wrap fragile glass jar."
-                  className="w-full px-3 py-2 clay-inset text-xs focus:outline-none font-medium leading-relaxed"
-                />
-
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleSaveNotes}
-                    disabled={isSavingNotes}
-                    className="clay-btn-light px-3 py-1 text-[11px] font-bold text-brandText inline-flex items-center gap-1"
-                  >
-                    <Save className="w-3 h-3 text-brandRed" />
-                    <span>{isSavingNotes ? 'Saving...' : 'Save Notes'}</span>
-                  </button>
                 </div>
               </div>
 

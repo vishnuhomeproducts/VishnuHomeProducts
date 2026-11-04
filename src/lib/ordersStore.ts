@@ -376,6 +376,7 @@ export async function createOrderInStore(orderData: Partial<AdminOrder>): Promis
   persistOrders(updated);
 
   // Also push to Supabase if valid URL configured
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (supabaseUrl && !supabaseUrl.includes('placeholder') && !supabaseUrl.includes('your-project')) {
     try {
       const supabase = createAdminClient();
