@@ -1,4 +1,12 @@
-export type BadgeType = 'SALE' | 'NEW' | 'HOT' | 'FESTIVE' | 'COASTAL' | null;
+export type BadgeType = 'SALE' | 'NEW' | 'HOT' | 'FESTIVE' | 'COASTAL' | 'BESTSELLER' | 'LIMITED' | null;
+
+export type TieredPriceType = 'none' | 'percentage_discount' | 'fixed_discount' | 'fixed_price';
+
+export interface TieredPriceSlab {
+  min_qty: number;
+  max_qty: number;
+  value: number; // Percentage (e.g. 10 for 10% OFF), Fixed discount (₹ OFF), or Fixed unit price (₹)
+}
 
 export interface SizeOption {
   label: string;
@@ -19,6 +27,8 @@ export interface Product {
   brand: string;
   images: string[];
   sizes: SizeOption[];
+  tiered_price_type?: TieredPriceType;
+  tiered_price_slabs?: TieredPriceSlab[];
   badge?: BadgeType;
   is_featured?: boolean;
   in_stock: boolean;
@@ -35,8 +45,11 @@ export interface CartItem {
   slug: string;
   size: string;
   price: number;
+  base_price?: number;
   mrp: number;
   qty: number;
+  tiered_price_type?: TieredPriceType;
+  tiered_price_slabs?: TieredPriceSlab[];
   image?: string;
   emoji?: string;
 }

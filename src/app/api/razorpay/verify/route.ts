@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/server';
 import { sendOrderConfirmationEmail } from '@/lib/resend';
+import { getRazorpaySecret } from '@/lib/razorpay';
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
       shipping,
     } = await req.json();
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keySecret = getRazorpaySecret();
 
     // Verify HMAC signature if live credentials exist
     if (keySecret && !keySecret.startsWith('razorpay_secret') && razorpay_signature) {

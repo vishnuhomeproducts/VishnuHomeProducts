@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { razorpay } from '@/lib/razorpay';
+import { getRazorpayInstance, RAZORPAY_KEY_ID, getRazorpaySecret } from '@/lib/razorpay';
 import { getAllProducts } from '@/lib/productsStore';
 import { calculateDeliveryFee } from '@/lib/delivery';
+import { validateStoreCoupon } from '@/lib/storeData';
+import { calculateTieredUnitPrice } from '@/lib/utils';
 
 export async function POST(req: Request) {
   try {
@@ -39,9 +41,15 @@ export async function POST(req: Request) {
         const sizeOption = product.sizes.find(
           (s) => s.label?.toLowerCase() === (item.size || '').toLowerCase()
         ) || product.sizes[0];
-        
-        const canonicalPrice = sizeOption ? sizeOption.price : (item.price || item.unit_price || 0);
-        verifiedSubtotal += canonicalPrice * (item.qty || 1);
+        const qty = Math.max(1, Number(item.qty) || 1);
+        const basePrice = sizeOption ? sizeOption.price : (item.price || item.unit_price || 0);
+        const { unitPrice: canonicalPrice } = calculateTieredUnitPrice(
+          basePrice,
+          qty,
+          product.tiered_price_type,
+          product.tiered_price_slabs
+        );
+        verifiedSubtotal += canonicalPrice * qty;
       } else {
         verifiedSubtotal += (item.price || item.unit_price || 0) * (item.qty || 1);
       }
@@ -50,14 +58,12 @@ export async function POST(req: Request) {
     const clientDeliveryFee = typeof shipping?.delivery_fee === 'number' ? shipping.delivery_fee : undefined;
     const { fee: verifiedDeliveryFee, deliveryType } = calculateDeliveryFee(pincode, verifiedSubtotal, clientDeliveryFee);
     
-    // Calculate coupon discount
+    // Calculate coupon discount against live store coupons
     let verifiedDiscount = 0;
     if (coupon_code) {
-      const code = String(coupon_code).toUpperCase().trim();
-      if (code === 'VISHNU10') {
-        verifiedDiscount = Math.round(verifiedSubtotal * 0.10);
-      } else if (code === 'WELCOME50' && verifiedSubtotal >= 299) {
-        verifiedDiscount = 50;
+      const couponResult = await validateStoreCoupon(String(coupon_code), verifiedSubtotal);
+      if (couponResult.valid) {
+        verifiedDiscount = couponResult.discountAmount;
       }
     }
 
@@ -77,14 +83,15 @@ export async function POST(req: Request) {
     }
 
     // Check if live Razorpay keys are configured
-    const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || RAZORPAY_KEY_ID;
+    const keySecret = getRazorpaySecret();
 
     if (!keyId || keyId.startsWith('rzp_test_placeholder') || !keySecret || keySecret.startsWith('razorpay_secret')) {
       // Return simulated mock order for development/demo
       const simulatedOrderId = 'order_sim_' + Math.random().toString(36).substring(2, 11);
       return NextResponse.json({
         order_id: simulatedOrderId,
+        key_id: keyId,
         amount: Math.round(verifiedTotal * 100),
         currency,
         deliveryType,
@@ -105,10 +112,12 @@ export async function POST(req: Request) {
       },
     };
 
-    const order = await razorpay.orders.create(options);
+    const razorpayClient = getRazorpayInstance();
+    const order = await razorpayClient.orders.create(options);
 
     return NextResponse.json({
       order_id: order.id,
+      key_id: keyId,
       amount: order.amount,
       currency: order.currency,
       deliveryType,

@@ -4,6 +4,10 @@ import { AppShell } from '@/components/layout/AppShell';
 
 export const metadata: Metadata = {
   title: 'Vishnu Home Products — Authentic Homemade Flavours from Mangalore',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
   description:
     'Buy authentic homemade Mangalorean thokkus, raw mango pickles, country garlic thokku, sun-dried fish, avalakki, and pure herbal hair oil. 100% natural with no preservatives. FSSAI Certified.',
   keywords: [

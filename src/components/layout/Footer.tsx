@@ -12,10 +12,12 @@ export const Footer: React.FC = () => {
           
           {/* Column 1: Brand & FSSAI */}
           <div className="space-y-4">
-            <div className="flex items-center gap-1.5">
-              <div className="bg-brandRed text-white font-black text-lg px-2.5 py-0.5 rounded tracking-tighter">
-                VISHNU
-              </div>
+            <div className="flex items-center gap-2">
+              <img
+                src="/logo.png"
+                alt="VISHNU"
+                className="h-8 w-auto object-contain"
+              />
               <div className="border border-white/60 text-white font-bold text-xs px-2 py-0.5 rounded uppercase tracking-wider">
                 Home Products
               </div>
@@ -77,29 +79,44 @@ export const Footer: React.FC = () => {
             </h3>
             <ul className="space-y-2 text-xs text-white/70">
               <li>
+                <Link href="/track-order" className="hover:text-brandAccent transition-colors font-semibold text-white/90">
+                  Track Your Order (Live AWB)
+                </Link>
+              </li>
+              <li>
                 <Link href="/account" className="hover:text-brandAccent transition-colors">
                   My Account & Orders
                 </Link>
               </li>
               <li>
-                <Link href="/cart" className="hover:text-brandAccent transition-colors">
-                  Shopping Cart
+                <Link href="/combos" className="hover:text-brandAccent transition-colors font-semibold text-brandAccent-mid">
+                  🎁 Build Your Own Combo (Save 15%)
                 </Link>
               </li>
               <li>
-                <span className="hover:text-brandAccent cursor-pointer transition-colors">
+                <Link href="/bulk-orders" className="hover:text-brandAccent transition-colors">
+                  Wedding Return-Gifts & Bulk Calculator
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-brandAccent transition-colors">
+                  Contact Us & Support
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact#shipping" className="hover:text-brandAccent transition-colors">
                   Shipping & Delivery (3–5 Days)
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-brandAccent cursor-pointer transition-colors">
-                  7-Day Return Policy
-                </span>
+                <Link href="/contact#returns" className="hover:text-brandAccent transition-colors">
+                  7-Day Replacement Policy
+                </Link>
               </li>
               <li>
-                <span className="hover:text-brandAccent cursor-pointer transition-colors">
-                  Privacy Policy & Terms
-                </span>
+                <Link href="/contact#terms" className="hover:text-brandAccent transition-colors">
+                  Privacy Policy & FSSAI Terms
+                </Link>
               </li>
             </ul>
           </div>

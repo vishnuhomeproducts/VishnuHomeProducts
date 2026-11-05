@@ -150,6 +150,22 @@ function LuckyDashboardContent() {
     }
   };
 
+  const handleUpdateOrderMeta = async (orderId: string, patch: Partial<AdminOrder>) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, ...patch } : o))
+    );
+
+    try {
+      await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: orderId, ...patch }),
+      });
+    } catch (e) {
+      fetchData();
+    }
+  };
+
   const handleDeleteOrder = async (orderId: string) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, is_archived: true } : o))
@@ -188,7 +204,12 @@ function LuckyDashboardContent() {
       try {
         sessionStorage.setItem('lucky_auth_status', 'unlocked');
         localStorage.setItem('lucky_auth_status', 'unlocked');
-      } catch (err) {}
+        fetch('/api/admin/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin }),
+        }).catch(() => { });
+      } catch (err) { }
       setIsLocked(false);
       setPinInput('');
       setPinError(false);
@@ -222,7 +243,8 @@ function LuckyDashboardContent() {
     try {
       sessionStorage.removeItem('lucky_auth_status');
       localStorage.removeItem('lucky_auth_status');
-    } catch (err) {}
+      fetch('/api/admin/auth', { method: 'DELETE' }).catch(() => { });
+    } catch (err) { }
     setIsLocked(true);
     setPinInput('');
     setPinError(false);
@@ -243,7 +265,12 @@ function LuckyDashboardContent() {
   });
 
   const inFlightCount = carts.filter((c) => !c.recovered).length;
-  const unfulfilledCount = orders.filter((o) => !o.is_archived && ['pending', 'confirmed', 'processing'].includes(o.status)).length;
+  const activeOrdersList = orders.filter((o) => !o.is_archived);
+  const totalRevenue = activeOrdersList.reduce((sum, o) => sum + (o.total || 0), 0);
+  const unfulfilledCount = activeOrdersList.filter((o) => ['pending', 'confirmed', 'processing'].includes(o.status)).length;
+  const pendingPaymentCount = activeOrdersList.filter(
+    (o) => o.payment_status === 'unpaid' || o.payment_status === 'pending_verification'
+  ).length;
 
   // Waiting for session determination
   if (!authLoaded) {
@@ -264,13 +291,15 @@ function LuckyDashboardContent() {
           <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Brand header */}
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-10 h-10 rounded-2xl bg-brandRed text-white font-black text-xl flex items-center justify-center tracking-tighter shadow-lg shadow-red-950">
-              V
-            </div>
+          <div className="flex items-center justify-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="VISHNU"
+              className="h-8 w-auto object-contain"
+            />
             <div className="text-left">
-              <div className="text-white font-black text-sm tracking-tight leading-none">
-                Vishnu Foods
+              <div className="text-white font-black text-xs tracking-tight leading-none">
+                Home Products
               </div>
               <div className="text-[10px] text-amber-400 font-bold uppercase tracking-wider mt-1">
                 Operations Hub
@@ -420,6 +449,12 @@ function LuckyDashboardContent() {
           isRefreshing={isRefreshing}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          totalRevenue={totalRevenue}
+          activeOrdersCount={activeOrdersList.length}
+          unfulfilledCount={unfulfilledCount}
+          inFlightCount={inFlightCount}
+          pendingPaymentCount={pendingPaymentCount}
+          onSelectTab={setActiveTab}
         />
 
         {/* View Routing */}
@@ -430,9 +465,10 @@ function LuckyDashboardContent() {
               inFlightCount={inFlightCount}
               onUpdateStatus={handleUpdateStatus}
               onUpdateCourier={handleUpdateCourier}
+              onUpdateOrderMeta={handleUpdateOrderMeta}
               onDeleteOrder={handleDeleteOrder}
               onPrintInvoice={(order) => setSelectedInvoiceOrder(order)}
-              onOpenReconcile={() => {}}
+              onOpenReconcile={() => { }}
             />
           )}
 

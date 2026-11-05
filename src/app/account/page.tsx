@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useCart } from '@/hooks/useCart';
-import { SAMPLE_PRODUCTS } from '@/lib/data/sampleProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { formatINR } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -34,6 +34,7 @@ function AccountContent() {
   const { user, logout, isAuthenticated } = useAuth();
   const { productIds, toggleWishlist } = useWishlist();
   const { addItem } = useCart();
+  const { products } = useProducts();
 
   const [orders, setOrders] = useState<any[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<any[]>([
@@ -81,7 +82,7 @@ function AccountContent() {
     }
   }, []);
 
-  const wishlistedProducts = SAMPLE_PRODUCTS.filter((p) => productIds.includes(p.id));
+  const wishlistedProducts = products.filter((p) => productIds.includes(p.id));
 
   const handleAddAddress = (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,12 +226,34 @@ function AccountContent() {
                     ))}
                   </div>
 
-                  <div className="pt-3 border-t border-brandBorder flex items-center justify-between text-xs">
+                  <div className="pt-3 border-t border-brandBorder flex flex-wrap items-center justify-between gap-3 text-xs">
                     <div className="text-brandText3">
                       Payment: <span className="text-brandGreen font-medium uppercase">{ord.payment_status}</span>
                     </div>
-                    <div className="text-sm font-bold text-brandText">
-                      Total: <span className="text-brandAccent">{formatINR(ord.total)}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm font-bold text-brandText">
+                        Total: <span className="text-brandAccent">{formatINR(ord.total)}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          (ord.items || []).forEach((item: any) => {
+                            addItem({
+                              product_id: item.product_id || item.name.toLowerCase().replace(/\s+/g, '-'),
+                              name: item.name,
+                              slug: item.slug || item.name.toLowerCase().replace(/\s+/g, '-'),
+                              size: item.size || '250g',
+                              price: item.price || item.unit_price || 120,
+                              mrp: item.mrp || (item.price || 120) + 25,
+                              emoji: item.emoji || '🫙',
+                              qty: item.qty || 1,
+                            });
+                          });
+                        }}
+                        className="px-3 py-1.5 bg-brandAccent hover:bg-brandAccent-mid text-white font-bold text-xs rounded-button shadow-2xs transition-colors"
+                      >
+                        ↻ Buy Again (1-Tap Reorder)
+                      </button>
                     </div>
                   </div>
                 </div>

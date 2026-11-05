@@ -21,6 +21,16 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
+  webpack: (config) => {
+    config.output = {
+      ...config.output,
+      chunkLoadTimeout: 300000,
+    };
+    return config;
+  },
   images: {
     remotePatterns: [
       {

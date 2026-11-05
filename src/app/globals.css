@@ -5,17 +5,17 @@
 @layer base {
   :root {
     --white: #ffffff;
-    --bg: #fafaf8;
-    --border: #eeece8;
-    --text: #1c1c1c;
-    --text2: #5a5a5a;
-    --text3: #999999;
-    --accent: #d97706;
-    --accent-light: #fff8ed;
-    --accent-mid: #f59e0b;
-    --red: #c0182b;
-    --green: #16a34a;
-    --dark: #1c1c1c;
+    --bg: #fbf8f4;
+    --border: #ebe3d8;
+    --text: #18110f;
+    --text2: #574b45;
+    --text3: #8c7e77;
+    --accent: #c81d25;
+    --accent-light: #fff4f2;
+    --accent-mid: #dc2626;
+    --red: #c81d25;
+    --green: #15803d;
+    --dark: #160f0d;
   }
 
   body {

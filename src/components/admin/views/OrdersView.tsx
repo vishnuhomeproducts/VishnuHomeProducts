@@ -8,6 +8,7 @@ import {
   Clock,
   Trash2,
   Edit2,
+  MessageCircle,
 } from 'lucide-react';
 import { AdminOrder, OrderFulfillmentStatus } from '@/types/admin';
 import { formatINR } from '@/lib/utils';
@@ -17,6 +18,7 @@ interface OrdersViewProps {
   inFlightCount: number;
   onUpdateStatus: (orderId: string, status: OrderFulfillmentStatus) => void;
   onUpdateCourier: (orderId: string, courier: string, awb: string) => void;
+  onUpdateOrderMeta?: (orderId: string, patch: Partial<AdminOrder>) => void;
   onDeleteOrder: (orderId: string) => void;
   onPrintInvoice: (order: AdminOrder) => void;
   onOpenReconcile: () => void;
@@ -27,6 +29,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
   inFlightCount,
   onUpdateStatus,
   onUpdateCourier,
+  onUpdateOrderMeta,
   onDeleteOrder,
   onPrintInvoice,
   onOpenReconcile,
@@ -41,6 +44,9 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
   const [editingAwbOrderId, setEditingAwbOrderId] = useState<string | null>(null);
   const [courierInput, setCourierInput] = useState('Delhivery Surface');
   const [awbInput, setAwbInput] = useState('');
+  // Inline staff note editor state
+  const [editingNoteOrderId, setEditingNoteOrderId] = useState<string | null>(null);
+  const [noteInput, setNoteInput] = useState('');
 
   // Tab Filtering
   const filteredByTab = orders.filter((o) => {
@@ -84,6 +90,11 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
   const handleSaveTracking = (orderId: string) => {
     onUpdateCourier(orderId, courierInput, awbInput);
     setEditingAwbOrderId(null);
+  };
+
+  const handleBulkUpdateStatus = (status: OrderFulfillmentStatus) => {
+    selectedOrderIds.forEach((id) => onUpdateStatus(id, status));
+    setSelectedOrderIds([]);
   };
 
   return (
@@ -195,6 +206,56 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
         </button>
       </div>
 
+      {/* Bulk Action Bar when orders are selected */}
+      {selectedOrderIds.length > 0 && (
+        <div className="clay-card p-3.5 border-l-4 border-l-brandRed flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-2 text-xs font-bold text-brandText">
+            <span className="px-2.5 py-0.5 rounded-full bg-brandRed text-white text-[11px]">
+              {selectedOrderIds.length} Selected
+            </span>
+            <span>Bulk Order Fulfillment Actions:</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => handleBulkUpdateStatus('packed')}
+              className="px-3 py-1.5 rounded-xl clay-btn-light text-brandText text-xs font-bold hover:text-brandRed"
+            >
+              📦 Mark All Packed
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkUpdateStatus('shipped')}
+              className="px-3 py-1.5 rounded-xl clay-btn-light text-brandText text-xs font-bold hover:text-brandRed"
+            >
+              🚚 Mark All Shipped
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkUpdateStatus('delivered')}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs"
+            >
+              ✅ Mark All Delivered
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-3 py-1.5 rounded-xl clay-btn-red text-white text-xs font-bold inline-flex items-center gap-1"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print Sheet</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedOrderIds([])}
+              className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-brandText font-medium"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 4. Orders List Cards (Soft Tactile Clay Cards) */}
       <div className="space-y-4 pt-1">
         {displayedOrders.length === 0 ? (
@@ -284,6 +345,27 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                       <option value="cancelled">Cancelled</option>
                     </select>
 
+                    {/* 1-Click WhatsApp Customer Dispatch Update */}
+                    <a
+                      href={`https://wa.me/${
+                        (order.shipping_phone || '').replace(/\D/g, '').length === 10
+                          ? '91' + (order.shipping_phone || '').replace(/\D/g, '')
+                          : (order.shipping_phone || '').replace(/\D/g, '')
+                      }?text=${encodeURIComponent(
+                        `Namaskara ${order.shipping_name}! 🙏\nYour Vishnu Home Products order *#${order.order_number}* (${formatINR(order.total)}) is currently *${order.status.toUpperCase()}*.\n${
+                          order.tracking_awb
+                            ? `Courier: ${order.courier_partner || 'Express'}\nAWB Tracking #: *${order.tracking_awb}*\n`
+                            : ''
+                        }Track live at: ${typeof window !== 'undefined' ? window.location.origin : 'https://vishnuhomeproducts.in'}/track-order`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-xs transition-colors"
+                      title="Send WhatsApp Status & Tracking Update to Customer"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </a>
+
                     {/* Print Packing Slip / Invoice */}
                     <button
                       onClick={() => onPrintInvoice(order)}
@@ -328,6 +410,55 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                         Note: {order.admin_notes}
                       </div>
                     )}
+                    <div className="pt-1.5 flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingNoteOrderId(editingNoteOrderId === order.id ? null : order.id);
+                          setNoteInput(order.admin_notes || '');
+                        }}
+                        className="text-[10px] font-bold text-slate-600 hover:text-brandRed underline"
+                      >
+                        {order.admin_notes ? '✎ Edit Staff Note' : '+ Add Kitchen/Dispatch Note'}
+                      </button>
+                      {order.payment_method === 'cod' && order.payment_status !== 'paid' && (
+                        <a
+                          href={`https://wa.me/${
+                            (order.shipping_phone || '').replace(/\D/g, '').length === 10
+                              ? '91' + (order.shipping_phone || '').replace(/\D/g, '')
+                              : (order.shipping_phone || '').replace(/\D/g, '')
+                          }?text=${encodeURIComponent(
+                            `Namaskara ${order.shipping_name}! 🙏\nWe received your Cash-on-Delivery (COD) order *#${order.order_number}* for *${formatINR(order.total)}* at Vishnu Home Products (Mangaluru).\n\nPlease reply *YES* to confirm your delivery address (${order.shipping_address?.city} - ${order.shipping_address?.pincode}) so we can seal and dispatch your fresh jars today!`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 hover:bg-amber-200 transition-colors"
+                        >
+                          💬 Verify COD on WhatsApp
+                        </a>
+                      )}
+                    </div>
+                    {editingNoteOrderId === order.id && (
+                      <div className="pt-2 flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={noteInput}
+                          onChange={(e) => setNoteInput(e.target.value)}
+                          placeholder="e.g. Extra bubble wrap, deliver after 6 PM..."
+                          className="flex-1 px-2.5 py-1 rounded-lg bg-white text-[11px] text-brandText focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onUpdateOrderMeta?.(order.id, { admin_notes: noteInput.trim() });
+                            setEditingNoteOrderId(null);
+                          }}
+                          className="px-2.5 py-1 rounded-lg clay-btn-red text-white text-[10px] font-bold"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Ordered Items List (Columns 6-9): Clay Inset Well */}
@@ -363,7 +494,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="pt-2">
+                    <div className="pt-2 space-y-1.5">
                       <span
                         className={`inline-block text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full shadow-xs ${
                           order.payment_status === 'paid'
@@ -373,6 +504,19 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                       >
                         {order.payment_method.toUpperCase()} • {order.payment_status.toUpperCase()}
                       </span>
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateOrderMeta?.(order.id, {
+                              payment_status: order.payment_status === 'paid' ? 'unpaid' : 'paid',
+                            })
+                          }
+                          className="text-[10px] font-bold underline text-slate-600 hover:text-brandRed"
+                        >
+                          {order.payment_status === 'paid' ? 'Mark Unpaid' : '✓ Mark Paid'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -4,13 +4,16 @@ import React from 'react';
 import {
   Menu,
   Plus,
-  Zap,
   RefreshCw,
-  CheckCircle,
   Search,
   Printer,
+  TrendingUp,
+  Boxes,
+  ShoppingCart,
+  Clock,
 } from 'lucide-react';
 import { AdminTab } from './AdminSidebar';
+import { formatINR } from '@/lib/utils';
 
 interface AdminHeaderProps {
   activeTab: AdminTab;
@@ -23,6 +26,12 @@ interface AdminHeaderProps {
   isRefreshing?: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  totalRevenue?: number;
+  activeOrdersCount?: number;
+  unfulfilledCount?: number;
+  inFlightCount?: number;
+  pendingPaymentCount?: number;
+  onSelectTab?: (tab: AdminTab) => void;
 }
 
 const TAB_TITLES: Record<AdminTab, { title: string; subtitle: string }> = {
@@ -67,12 +76,12 @@ const TAB_TITLES: Record<AdminTab, { title: string; subtitle: string }> = {
     subtitle: 'Manage business address, GSTIN, Razorpay credentials, and shipping thresholds.',
   },
   tracking: {
-    title: 'Google Ads & Tracking Hub',
-    subtitle: 'Configure GA4 measurement ID, Meta Pixel, and conversion tags.',
+    title: 'Revenue Analytics & GST Reports',
+    subtitle: '7-day sales trends, city heatmaps, product velocity, and GST tax summaries.',
   },
   policies: {
-    title: 'Store Legal Policies',
-    subtitle: 'Review and update Shipping & Delivery, Return & Refund, and Terms.',
+    title: 'Store Legal Policies & SLA Editor',
+    subtitle: 'Review and update Shipping & Delivery, Return & Refund, and Bulk Inquiry notes.',
   },
 };
 
@@ -80,13 +89,17 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   activeTab,
   onOpenMobileMenu,
   onRefresh,
-  onReconcile,
   onCreateManualOrder,
   onBatchPack,
-  onMarkAllSeen,
   isRefreshing,
   searchQuery,
   onSearchChange,
+  totalRevenue = 0,
+  activeOrdersCount = 0,
+  unfulfilledCount = 0,
+  inFlightCount = 0,
+  pendingPaymentCount = 0,
+  onSelectTab,
 }) => {
   const currentTabInfo = TAB_TITLES[activeTab] || {
     title: 'Operations Hub',
@@ -94,7 +107,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 px-4 sm:px-6 py-3.5 space-y-3.5 backdrop-blur-md bg-[#eaedf2]/90 border-b border-white/60">
+    <header className="sticky top-0 z-30 px-4 sm:px-6 py-3.5 space-y-3 backdrop-blur-md bg-[#eaedf2]/90 border-b border-white/60">
       {/* Top row: Menu toggle, Title, Status & Top Action Buttons */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         {/* Left: Mobile hamburger + Title */}
@@ -139,7 +152,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             title="Batch packing slips for today's pending orders"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Auto-Prepare Today's Batch</span>
+            <span className="hidden sm:inline">Auto-Prepare Today&apos;s Batch</span>
             <span className="sm:hidden">Batch Pack</span>
           </button>
 
@@ -156,7 +169,66 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         </div>
       </div>
 
-      {/* Clay Inset Search Bar (Matte well, very easy on the eyes) */}
+      {/* Executive Quick-Pulse Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+        <button
+          type="button"
+          onClick={() => onSelectTab?.('tracking')}
+          className="p-2.5 rounded-xl clay-card-flat flex items-center justify-between text-left hover:bg-white/70 transition-colors"
+        >
+          <div>
+            <div className="text-[10px] font-bold uppercase text-slate-500">Gross Revenue</div>
+            <div className="font-price font-extrabold text-sm text-brandRed">
+              {formatINR(totalRevenue)} <span className="text-[10px] font-normal text-slate-500">({activeOrdersCount})</span>
+            </div>
+          </div>
+          <TrendingUp className="w-4 h-4 text-brandRed opacity-80" />
+        </button>
+
+        <button
+          type="button"
+          onClick={onBatchPack}
+          className="p-2.5 rounded-xl clay-card-flat flex items-center justify-between text-left hover:bg-white/70 transition-colors"
+        >
+          <div>
+            <div className="text-[10px] font-bold uppercase text-slate-500">Unpacked Batch</div>
+            <div className="font-price font-extrabold text-sm text-brandText">
+              {unfulfilledCount} Orders <span className="text-[10px] text-brandRed font-semibold">Pack →</span>
+            </div>
+          </div>
+          <Boxes className="w-4 h-4 text-amber-600 opacity-80" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onSelectTab?.('carts')}
+          className="p-2.5 rounded-xl clay-card-flat flex items-center justify-between text-left hover:bg-white/70 transition-colors"
+        >
+          <div>
+            <div className="text-[10px] font-bold uppercase text-slate-500">Live Active Carts</div>
+            <div className="font-price font-extrabold text-sm text-brandGreen">
+              {inFlightCount} Shoppers
+            </div>
+          </div>
+          <ShoppingCart className="w-4 h-4 text-brandGreen opacity-80" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onSelectTab?.('orders')}
+          className="p-2.5 rounded-xl clay-card-flat flex items-center justify-between text-left hover:bg-white/70 transition-colors"
+        >
+          <div>
+            <div className="text-[10px] font-bold uppercase text-slate-500">COD / Unpaid</div>
+            <div className="font-price font-extrabold text-sm text-amber-700">
+              {pendingPaymentCount} Pending
+            </div>
+          </div>
+          <Clock className="w-4 h-4 text-amber-600 opacity-80" />
+        </button>
+      </div>
+
+      {/* Clay Inset Search Bar */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <input
@@ -164,7 +236,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search orders, customer name, mobile number, pincode, product..."
-            className="w-full pl-10 pr-4 py-2.5 text-xs text-brandText placeholder-slate-400 focus:outline-none clay-inset"
+            className="w-full pl-10 pr-4 py-2 text-xs text-brandText placeholder-slate-400 focus:outline-none clay-inset"
           />
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
         </div>

@@ -213,12 +213,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         {/* Brand Header */}
         <div className="p-3.5 m-3 mb-1 bg-[#181b24] border border-white/[0.08] rounded-2xl flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white font-black text-lg flex items-center justify-center tracking-tighter shadow-md shadow-rose-950/60 group-hover:scale-105 transition-transform">
-              V
-            </div>
+            <img
+              src="/logo.png"
+              alt="Vishnu"
+              className="h-7 w-auto object-contain group-hover:scale-105 transition-transform"
+            />
             <div>
-              <div className="text-white font-black text-sm tracking-tight leading-tight">
-                Vishnu Foods
+              <div className="text-white font-black text-xs tracking-tight leading-tight">
+                Home Products
               </div>
               <div className="text-[10px] text-rose-400 font-bold uppercase tracking-wider mt-0.5">
                 Operations Hub

@@ -146,6 +146,12 @@ export async function createProduct(productData: Partial<Product>): Promise<Prod
       { label: '300g', price: 120, mrp: 145 },
       { label: '500g', price: 190, mrp: 230 },
     ],
+    tiered_price_type: productData.tiered_price_type || 'percentage_discount',
+    tiered_price_slabs: productData.tiered_price_slabs || [
+      { min_qty: 2, max_qty: 4, value: 5 },
+      { min_qty: 5, max_qty: 9, value: 10 },
+      { min_qty: 10, max_qty: 999, value: 15 },
+    ],
     badge: productData.badge || undefined,
     is_featured: productData.is_featured ?? false,
     in_stock: productData.in_stock ?? true,

@@ -7,24 +7,25 @@ import { CategoryChips } from '@/components/home/CategoryChips';
 import { ProductSection } from '@/components/home/ProductSection';
 import { PromoBanners } from '@/components/home/PromoBanners';
 import { Reviews } from '@/components/home/Reviews';
-import { SAMPLE_PRODUCTS } from '@/lib/data/sampleProducts';
+import { useProducts } from '@/hooks/useProducts';
 
 export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState('all');
+  const { products } = useProducts();
 
   // Filter products dynamically if category chip is selected on homepage
   const displayedProducts =
     activeCategory === 'all'
-      ? SAMPLE_PRODUCTS
-      : SAMPLE_PRODUCTS.filter(
+      ? products
+      : products.filter(
           (p) => p.category.toLowerCase() === activeCategory.toLowerCase()
         );
 
   // Best Sellers (first 4 featured items)
-  const bestSellers = SAMPLE_PRODUCTS.slice(0, 4);
+  const bestSellers = products.slice(0, 4);
 
   // More Products / Seasonal Specials
-  const moreProducts = SAMPLE_PRODUCTS.slice(4, 8);
+  const moreProducts = products.slice(4, 8);
 
   return (
     <div className="space-y-0">

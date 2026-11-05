@@ -15,12 +15,68 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
     register,
     formState: { errors },
     watch,
+    setValue,
   } = form;
 
   const selectedPaymentMethod = watch('paymentMethod');
 
+  const quickAddresses = [
+    {
+      label: '🏠 Home (Mangaluru)',
+      name: 'Pooja Hegde',
+      phone: '9845012345',
+      email: 'pooja@example.com',
+      line1: 'Flat 302, Sagar View Apts, Kadri Temple Road',
+      line2: 'Near Kadri Park',
+      city: 'Mangaluru',
+      state: 'Karnataka',
+      pincode: '575002',
+    },
+    {
+      label: '🏢 Office (Bengaluru)',
+      name: 'Pooja Hegde',
+      phone: '9845012345',
+      email: 'pooja@example.com',
+      line1: '100 Feet Road, Indiranagar Stage 2',
+      line2: 'Near Metro Station',
+      city: 'Bengaluru',
+      state: 'Karnataka',
+      pincode: '560038',
+    },
+  ];
+
+  const handleSelectQuickAddress = (addr: typeof quickAddresses[0]) => {
+    setValue('name', addr.name, { shouldValidate: true });
+    setValue('phone', addr.phone, { shouldValidate: true });
+    setValue('email', addr.email, { shouldValidate: true });
+    setValue('line1', addr.line1, { shouldValidate: true });
+    setValue('line2', addr.line2, { shouldValidate: true });
+    setValue('city', addr.city, { shouldValidate: true });
+    setValue('state', addr.state, { shouldValidate: true });
+    setValue('pincode', addr.pincode, { shouldValidate: true });
+  };
+
   return (
     <div className="space-y-8">
+      {/* Saved Address 1-Tap Selector */}
+      <div className="bg-amber-50/70 p-4 rounded-card border border-amber-200/80 space-y-2.5">
+        <div className="text-xs font-bold text-brandText flex items-center justify-between">
+          <span>⚡ 1-Tap Saved Address Fill</span>
+          <span className="text-[10px] text-brandAccent font-semibold">Express Checkout</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {quickAddresses.map((addr, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleSelectQuickAddress(addr)}
+              className="px-3 py-1.5 rounded-lg bg-white hover:bg-brandAccent hover:text-white text-brandText border border-brandBorder text-xs font-semibold transition-colors shadow-2xs"
+            >
+              {addr.label} ({addr.pincode})
+            </button>
+          ))}
+        </div>
+      </div>
       
       {/* Section 1: Contact Information */}
       <div className="bg-white p-6 rounded-card border border-brandBorder shadow-sm space-y-4">

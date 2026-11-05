@@ -1,27 +1,28 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { CartItem, Coupon } from '@/types';
+import { calculateTieredUnitPrice } from '@/lib/utils';
 
 interface CartStore {
   items: CartItem[];
   coupon: Coupon | null;
   isDrawerOpen: boolean;
-  
+
   // Drawer controls
   openDrawer: () => void;
   closeDrawer: () => void;
   toggleDrawer: () => void;
-  
+
   // Cart Actions
   addItem: (item: Omit<CartItem, 'qty'> & { qty?: number }) => void;
   removeItem: (productId: string, size: string) => void;
   updateQty: (productId: string, size: string, qty: number) => void;
   clearCart: () => void;
-  
+
   // Coupon Actions
   applyCoupon: (coupon: Coupon) => void;
   removeCoupon: () => void;
-  
+
   // Calculations
   getSubtotal: () => number;
   getDeliveryFee: () => number;
@@ -48,14 +49,45 @@ export const useCart = create<CartStore>()(
         );
 
         const qtyToAdd = newItem.qty || 1;
+        const basePrice = newItem.base_price || newItem.price;
 
         if (existingIndex > -1) {
           const updatedItems = [...currentItems];
-          updatedItems[existingIndex].qty += qtyToAdd;
+          const existing = updatedItems[existingIndex];
+          const newQty = existing.qty + qtyToAdd;
+          const itemBase = existing.base_price || basePrice;
+          const { unitPrice } = calculateTieredUnitPrice(
+            itemBase,
+            newQty,
+            newItem.tiered_price_type ?? existing.tiered_price_type,
+            newItem.tiered_price_slabs ?? existing.tiered_price_slabs
+          );
+          updatedItems[existingIndex] = {
+            ...existing,
+            qty: newQty,
+            base_price: itemBase,
+            price: unitPrice,
+            tiered_price_type: newItem.tiered_price_type ?? existing.tiered_price_type,
+            tiered_price_slabs: newItem.tiered_price_slabs ?? existing.tiered_price_slabs,
+          };
           set({ items: updatedItems, isDrawerOpen: true });
         } else {
+          const { unitPrice } = calculateTieredUnitPrice(
+            basePrice,
+            qtyToAdd,
+            newItem.tiered_price_type,
+            newItem.tiered_price_slabs
+          );
           set({
-            items: [...currentItems, { ...newItem, qty: qtyToAdd }],
+            items: [
+              ...currentItems,
+              {
+                ...newItem,
+                base_price: basePrice,
+                price: unitPrice,
+                qty: qtyToAdd,
+              },
+            ],
             isDrawerOpen: true,
           });
         }
@@ -75,11 +107,19 @@ export const useCart = create<CartStore>()(
           return;
         }
         set({
-          items: get().items.map((item) =>
-            item.product_id === productId && item.size === size
-              ? { ...item, qty }
-              : item
-          ),
+          items: get().items.map((item) => {
+            if (item.product_id === productId && item.size === size) {
+              const basePrice = item.base_price || item.price;
+              const { unitPrice } = calculateTieredUnitPrice(
+                basePrice,
+                qty,
+                item.tiered_price_type,
+                item.tiered_price_slabs
+              );
+              return { ...item, qty, base_price: basePrice, price: unitPrice };
+            }
+            return item;
+          }),
         });
       },
 

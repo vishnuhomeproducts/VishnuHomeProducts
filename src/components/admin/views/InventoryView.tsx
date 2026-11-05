@@ -18,14 +18,24 @@ import {
   Loader2,
 } from 'lucide-react';
 import { SAMPLE_PRODUCTS } from '@/lib/data/sampleProducts';
-import { formatINR } from '@/lib/utils';
-import { Product, ProductSize } from '@/types';
+import { formatINR, DEFAULT_TIERED_SLABS } from '@/lib/utils';
+import { Product, ProductSize, TieredPriceSlab, TieredPriceType } from '@/types';
 
 export const InventoryView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>(SAMPLE_PRODUCTS);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'out_of_stock' | 'featured'>('all');
+
+  // Inline Quick Price Edit state
+  const [quickPriceEdit, setQuickPriceEdit] = useState<{
+    productId: string;
+    sizeIdx: number;
+    price: number;
+    mrp: number;
+  } | null>(null);
+  const [flashStatus, setFlashStatus] = useState<string | null>(null);
 
   // Modals state
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
@@ -46,6 +56,8 @@ export const InventoryView: React.FC = () => {
     { label: '300g', price: 120, mrp: 145 },
     { label: '500g', price: 190, mrp: 230 },
   ]);
+  const [formTieredPriceType, setFormTieredPriceType] = useState<TieredPriceType>('percentage_discount');
+  const [formTieredSlabs, setFormTieredSlabs] = useState<TieredPriceSlab[]>([...DEFAULT_TIERED_SLABS]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -88,7 +100,15 @@ export const InventoryView: React.FC = () => {
     const matchesCat =
       selectedCategory === 'all' ||
       p.category.toLowerCase().includes(selectedCategory.toLowerCase());
-    return matchesSearch && matchesCat;
+    const matchesStock =
+      stockFilter === 'all'
+        ? true
+        : stockFilter === 'in_stock'
+        ? p.in_stock
+        : stockFilter === 'out_of_stock'
+        ? !p.in_stock
+        : Boolean(p.badge);
+    return matchesSearch && matchesCat && matchesStock;
   });
 
   // Open Add Product Modal
@@ -107,6 +127,8 @@ export const InventoryView: React.FC = () => {
       { label: '300g', price: 120, mrp: 145 },
       { label: '500g', price: 190, mrp: 230 },
     ]);
+    setFormTieredPriceType('percentage_discount');
+    setFormTieredSlabs([...DEFAULT_TIERED_SLABS]);
     setFormError('');
     setIsAddEditOpen(true);
   };
@@ -124,6 +146,12 @@ export const InventoryView: React.FC = () => {
     setFormInStock(p.in_stock);
     setFormImageUrl(p.images && p.images[0] ? p.images[0] : '/images/products/placeholder.jpg');
     setFormSizes(p.sizes && p.sizes.length > 0 ? p.sizes : [{ label: '500g', price: 190, mrp: 230 }]);
+    setFormTieredPriceType(p.tiered_price_type || 'percentage_discount');
+    setFormTieredSlabs(
+      p.tiered_price_slabs && p.tiered_price_slabs.length > 0
+        ? p.tiered_price_slabs
+        : [...DEFAULT_TIERED_SLABS]
+    );
     setFormError('');
     setIsAddEditOpen(true);
   };
@@ -183,6 +211,8 @@ export const InventoryView: React.FC = () => {
         in_stock: formInStock,
         images: [formImageUrl || '/images/products/placeholder.jpg'],
         sizes: formSizes,
+        tiered_price_type: formTieredPriceType,
+        tiered_price_slabs: formTieredPriceType === 'none' ? [] : formTieredSlabs,
       };
 
       if (editingProduct) {
@@ -228,6 +258,93 @@ export const InventoryView: React.FC = () => {
       });
     } catch (e) {
       console.warn('Failed to toggle stock on server:', e);
+    }
+  };
+
+  // Quick Inline Badge Update
+  const handleQuickBadgeChange = async (productId: string, newBadge: string) => {
+    const badgeValue = newBadge ? (newBadge as Product['badge']) : undefined;
+    setProducts(products.map(p => (p.id === productId ? { ...p, badge: badgeValue } : p)));
+    try {
+      await fetch('/api/admin/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: productId, badge: badgeValue || null }),
+      });
+    } catch (e) {
+      console.warn('Failed to update badge on server:', e);
+    }
+  };
+
+  // Save Inline Quick Price Edit
+  const handleSaveQuickPrice = async () => {
+    if (!quickPriceEdit) return;
+    const { productId, sizeIdx, price, mrp } = quickPriceEdit;
+    const target = products.find((p) => p.id === productId);
+    if (!target) return;
+
+    const updatedSizes = target.sizes.map((s, idx) =>
+      idx === sizeIdx ? { ...s, price: Math.max(1, Number(price)), mrp: Math.max(1, Number(mrp)) } : s
+    );
+
+    setProducts(products.map((p) => (p.id === productId ? { ...p, sizes: updatedSizes } : p)));
+    setQuickPriceEdit(null);
+
+    try {
+      await fetch('/api/admin/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: productId, sizes: updatedSizes }),
+      });
+    } catch (e) {
+      console.warn('Failed to save quick price:', e);
+    }
+  };
+
+  // Apply Storewide or Category Flash Sale Discount off MRP
+  const handleApplyFlashDiscount = async (discountPercent: number) => {
+    const targetLabel = selectedCategory === 'all' ? 'All Categories' : selectedCategory;
+    const updatedList = products.map((p) => {
+      const matchesCat =
+        selectedCategory === 'all' ||
+        p.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      if (!matchesCat) return p;
+
+      const newSizes = p.sizes.map((s) => {
+        const baseMrp = s.mrp && s.mrp > 0 ? s.mrp : Math.round(s.price * 1.15);
+        const newPrice =
+          discountPercent === 0
+            ? baseMrp
+            : Math.max(10, Math.round(baseMrp * (1 - discountPercent / 100)));
+        return {
+          ...s,
+          mrp: baseMrp,
+          price: newPrice,
+        };
+      });
+      return { ...p, sizes: newSizes };
+    });
+
+    setProducts(updatedList);
+    setFlashStatus(
+      discountPercent > 0
+        ? `⚡ Applied ${discountPercent}% OFF MRP across ${targetLabel}!`
+        : `✓ Reset ${targetLabel} prices to MRP.`
+    );
+    setTimeout(() => setFlashStatus(null), 4000);
+
+    // Persist updated products to server
+    for (const p of updatedList) {
+      const matchesCat =
+        selectedCategory === 'all' ||
+        p.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      if (matchesCat) {
+        fetch('/api/admin/products', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: p.id, sizes: p.sizes }),
+        }).catch(() => {});
+      }
     }
   };
 
@@ -464,20 +581,41 @@ export const InventoryView: React.FC = () => {
         </div>
 
         {/* Search & Filter Row */}
-        <div className="p-3 bg-white/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/60">
-          <div className="flex items-center gap-2.5">
+        <div className="p-3 bg-white/40 flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/60">
+          <div className="flex items-center gap-2 flex-wrap">
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="text-xs px-3 py-1.5 clay-card-flat border-none text-brandText focus:outline-none"
             >
               <option value="all">All Categories ({products.length})</option>
-              <option value="pickles">Pickles & Thokkus</option>
-              <option value="spices">Spices & Masalas</option>
+              <option value="pickles">Pickles &amp; Thokkus</option>
+              <option value="spices">Spices &amp; Masalas</option>
               <option value="dry fish">Dry Fish</option>
               <option value="sweets">Traditional Sweets</option>
-              <option value="wellness">Wellness & Oils</option>
+              <option value="wellness">Wellness &amp; Oils</option>
             </select>
+
+            {/* Stock & Badge Quick Filter Pills */}
+            {(
+              [
+                { id: 'all', label: `All (${products.length})` },
+                { id: 'in_stock', label: `✓ In Stock (${products.filter((p) => p.in_stock).length})` },
+                { id: 'out_of_stock', label: `✕ Out of Stock (${products.filter((p) => !p.in_stock).length})` },
+                { id: 'featured', label: `★ Featured (${products.filter((p) => Boolean(p.badge)).length})` },
+              ] as const
+            ).map((pill) => (
+              <button
+                key={pill.id}
+                type="button"
+                onClick={() => setStockFilter(pill.id)}
+                className={`text-[11px] px-3 py-1 transition-all ${
+                  stockFilter === pill.id ? 'clay-pill-active font-bold' : 'clay-pill-inactive font-medium'
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
           </div>
 
           <div className="relative">
@@ -486,10 +624,35 @@ export const InventoryView: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by product name or slug..."
-              className="text-xs pl-8 pr-3 py-1.5 clay-inset text-brandText focus:outline-none w-64"
+              className="text-xs pl-8 pr-3 py-1.5 clay-inset text-brandText focus:outline-none w-full sm:w-64"
             />
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
           </div>
+        </div>
+
+        {/* Flash Sale / Bulk Price Discount Bar */}
+        <div className="px-4 py-2.5 bg-amber-50/70 border-b border-white/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-brandText">
+              ⚡ Instant Flash Sale Pricing ({selectedCategory === 'all' ? 'All Products' : selectedCategory}):
+            </span>
+            {[10, 15, 20].map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => handleApplyFlashDiscount(pct)}
+                className="px-2.5 py-1 rounded-lg clay-btn-light text-brandRed font-bold text-[11px] hover:bg-red-50"
+              >
+                Apply {pct}% OFF MRP
+              </button>
+            ))}
+            <span className="text-[11px] text-slate-500">
+              (Tip: Click any jar price pill below to edit its price inline)
+            </span>
+          </div>
+          {flashStatus && (
+            <span className="text-[11px] font-bold text-brandGreen">{flashStatus}</span>
+          )}
         </div>
 
         {/* Product Table */}
@@ -531,29 +694,94 @@ export const InventoryView: React.FC = () => {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {prod.sizes.map((s, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2.5 py-0.5 rounded-lg clay-card-flat font-mono text-[11px] text-brandText"
-                          >
-                            {s.label}: <strong className="font-price font-bold">{formatINR(s.price)}</strong>
-                            {s.mrp && s.mrp > s.price && (
-                              <span className="text-[10px] text-slate-400 line-through ml-1 font-price">
-                                {formatINR(s.mrp)}
-                              </span>
-                            )}
-                          </span>
-                        ))}
+                        {prod.sizes.map((s, idx) => {
+                          const isEditingThis =
+                            quickPriceEdit?.productId === prod.id && quickPriceEdit?.sizeIdx === idx;
+                          return isEditingThis ? (
+                            <div
+                              key={idx}
+                              className="inline-flex items-center gap-1 p-1 rounded-lg bg-white shadow-sm border border-brandRed"
+                            >
+                              <span className="text-[10px] font-bold text-slate-600 px-1">{s.label}:</span>
+                              <input
+                                type="number"
+                                value={quickPriceEdit.price}
+                                onChange={(e) =>
+                                  setQuickPriceEdit({
+                                    ...quickPriceEdit,
+                                    price: Number(e.target.value),
+                                  })
+                                }
+                                className="w-14 px-1.5 py-0.5 text-[11px] font-mono font-bold border rounded text-brandRed"
+                                title="Selling Price (₹)"
+                              />
+                              <input
+                                type="number"
+                                value={quickPriceEdit.mrp}
+                                onChange={(e) =>
+                                  setQuickPriceEdit({
+                                    ...quickPriceEdit,
+                                    mrp: Number(e.target.value),
+                                  })
+                                }
+                                className="w-14 px-1.5 py-0.5 text-[10px] font-mono border rounded text-slate-500"
+                                title="MRP (₹)"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleSaveQuickPrice}
+                                className="px-2 py-0.5 rounded bg-brandRed text-white text-[10px] font-bold"
+                              >
+                                ✓
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setQuickPriceEdit(null)}
+                                className="px-1 text-slate-400 hover:text-slate-600 text-[10px]"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() =>
+                                setQuickPriceEdit({
+                                  productId: prod.id,
+                                  sizeIdx: idx,
+                                  price: s.price,
+                                  mrp: s.mrp || s.price,
+                                })
+                              }
+                              title="Click to quick-edit jar price & MRP"
+                              className="px-2.5 py-0.5 rounded-lg clay-card-flat hover:ring-1 hover:ring-brandRed font-mono text-[11px] text-brandText transition-all cursor-pointer"
+                            >
+                              {s.label}: <strong className="font-price font-bold">{formatINR(s.price)}</strong>
+                              {s.mrp && s.mrp > s.price && (
+                                <span className="text-[10px] text-slate-400 line-through ml-1 font-price">
+                                  {formatINR(s.mrp)}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      {prod.badge ? (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase clay-btn-red">
-                          {prod.badge}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-[11px]">—</span>
-                      )}
+                      <select
+                        value={prod.badge || ''}
+                        onChange={(e) => handleQuickBadgeChange(prod.id, e.target.value)}
+                        className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border-none focus:outline-none cursor-pointer ${
+                          prod.badge ? 'clay-btn-red text-white' : 'clay-card-flat text-slate-500'
+                        }`}
+                      >
+                        <option value="">No Badge</option>
+                        <option value="BESTSELLER">BESTSELLER</option>
+                        <option value="NEW">NEW</option>
+                        <option value="HOT">HOT</option>
+                        <option value="LIMITED">LIMITED</option>
+                      </select>
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
@@ -794,6 +1022,147 @@ export const InventoryView: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Tiered Price Type & Slabs Builder (Matching Screenshot) */}
+              <div className="space-y-3 pt-3 border-t border-white/60">
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-brandText text-xs">
+                    Tiered price type
+                  </label>
+                  <select
+                    value={formTieredPriceType}
+                    onChange={(e) => setFormTieredPriceType(e.target.value as TieredPriceType)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-brandText font-medium focus:outline-none focus:border-brandRed"
+                  >
+                    <option value="percentage_discount">Percentage Discount</option>
+                    <option value="fixed_discount">Fixed Discount per Unit (₹ OFF)</option>
+                    <option value="fixed_price">Fixed Unit Price (₹)</option>
+                    <option value="none">None (Disable Tiered Slabs)</option>
+                  </select>
+                </div>
+
+                {formTieredPriceType !== 'none' && (
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block font-semibold text-brandText text-xs">
+                        Tiered price slabs
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setFormTieredSlabs([...DEFAULT_TIERED_SLABS])}
+                        className="text-[10px] font-bold text-brandRed hover:underline"
+                      >
+                        Reset Default Slabs (5% / 10% / 15%)
+                      </button>
+                    </div>
+
+                    <div className="rounded-lg overflow-hidden border border-slate-200 bg-white">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#e8edf5] text-slate-700 font-semibold text-[11px]">
+                          <tr>
+                            <th className="py-2.5 px-3">Min Quantity</th>
+                            <th className="py-2.5 px-3">Max Quantity</th>
+                            <th className="py-2.5 px-3">
+                              {formTieredPriceType === 'percentage_discount'
+                                ? 'Percentage Discount'
+                                : formTieredPriceType === 'fixed_discount'
+                                ? 'Fixed Discount (₹)'
+                                : 'Fixed Unit Price (₹)'}
+                            </th>
+                            <th className="py-2.5 px-3 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {formTieredSlabs.map((slab, sIdx) => (
+                            <tr key={sIdx}>
+                              <td className="p-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={slab.min_qty}
+                                  onChange={(e) => {
+                                    const next = [...formTieredSlabs];
+                                    next[sIdx] = { ...next[sIdx], min_qty: Number(e.target.value) };
+                                    setFormTieredSlabs(next);
+                                  }}
+                                  placeholder="e.g. 2"
+                                  className="w-full px-2.5 py-1.5 border border-slate-200 rounded font-mono text-brandText focus:outline-none focus:border-brandRed"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={slab.max_qty}
+                                  onChange={(e) => {
+                                    const next = [...formTieredSlabs];
+                                    next[sIdx] = { ...next[sIdx], max_qty: Number(e.target.value) };
+                                    setFormTieredSlabs(next);
+                                  }}
+                                  placeholder="e.g. 5"
+                                  className="w-full px-2.5 py-1.5 border border-slate-200 rounded font-mono text-brandText focus:outline-none focus:border-brandRed"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <div className="relative">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={slab.value}
+                                    onChange={(e) => {
+                                      const next = [...formTieredSlabs];
+                                      next[sIdx] = { ...next[sIdx], value: Number(e.target.value) };
+                                      setFormTieredSlabs(next);
+                                    }}
+                                    placeholder="e.g. 10"
+                                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded font-mono font-bold text-brandRed focus:outline-none focus:border-brandRed"
+                                  />
+                                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                                    {formTieredPriceType === 'percentage_discount' ? '%' : '₹'}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="p-2 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setFormTieredSlabs(formTieredSlabs.filter((_, i) => i !== sIdx))
+                                  }
+                                  className="p-1.5 rounded text-slate-400 hover:text-brandRed hover:bg-red-50 transition-colors"
+                                  title="Remove slab"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const lastMax =
+                          formTieredSlabs.length > 0
+                            ? formTieredSlabs[formTieredSlabs.length - 1].max_qty
+                            : 1;
+                        setFormTieredSlabs([
+                          ...formTieredSlabs,
+                          {
+                            min_qty: lastMax + 1,
+                            max_qty: lastMax + 5,
+                            value: 10,
+                          },
+                        ]);
+                      }}
+                      className="px-4 py-2 rounded-md bg-[#1e3a6e] hover:bg-[#162d57] text-white font-semibold text-xs transition-colors shadow-xs"
+                    >
+                      Add Tiered price slabs
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Image & Cloudinary Auto-Compression */}

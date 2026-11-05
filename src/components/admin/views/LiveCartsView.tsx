@@ -982,16 +982,33 @@ export const LiveCartsView: React.FC<LiveCartsViewProps> = ({ carts }) => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
-              <a
-                href={modalVisitor.currentPage}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2 rounded-xl clay-btn-light text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5"
-              >
-                <Eye className="w-3.5 h-3.5 text-brandRed" />
-                <span>Inspect Product Page</span>
-              </a>
+            <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <a
+                  href={modalVisitor.currentPage}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3.5 py-2 rounded-xl clay-btn-light text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5"
+                >
+                  <Eye className="w-3.5 h-3.5 text-brandRed" />
+                  <span>Inspect Page</span>
+                </a>
+
+                {modalVisitor.phone && (
+                  <a
+                    href={`https://wa.me/91${modalVisitor.phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(
+                      `Namaskara ${modalVisitor.name}! 🙏 We noticed you left fresh coastal items (${formatINR(
+                        modalVisitor.cartTotal
+                      )}) in your cart at Vishnu Home Products. Use code *VISHNU10* for an instant 10% OFF to complete your order: https://vishnuhomeproducts.in/cart`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs"
+                  >
+                    <span>💬 Recover on WhatsApp (10% Code)</span>
+                  </a>
+                )}
+              </div>
 
               <button
                 type="button"

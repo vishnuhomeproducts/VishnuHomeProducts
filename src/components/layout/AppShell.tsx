@@ -6,10 +6,52 @@ import { TopBar } from './TopBar';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { CartDrawer } from './CartDrawer';
+import { WhatsAppFloat } from './WhatsAppFloat';
+import { RecentOrderToast } from './RecentOrderToast';
+import { useCart } from '@/hooks/useCart';
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin') || pathname.startsWith('/lucky');
+  const { items, getTotal } = useCart();
+
+  // Sync live customer cart to Admin Live Radar when items change
+  useEffect(() => {
+    if (isAdmin || typeof window === 'undefined' || items.length === 0) return;
+
+    const timer = setTimeout(() => {
+      try {
+        let sessionId = localStorage.getItem('vh_cart_session_id');
+        if (!sessionId) {
+          sessionId = 'cart_live_' + Math.floor(Math.random() * 90000 + 10000);
+          localStorage.setItem('vh_cart_session_id', sessionId);
+        }
+
+        fetch('/api/admin/carts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: sessionId,
+            customer_name: 'Live Storefront Shopper',
+            city: 'Mangaluru / Online',
+            items: items.map((i) => ({
+              product_id: i.product_id,
+              name: i.name,
+              size: i.size,
+              qty: i.qty,
+              unit_price: i.price,
+              emoji: i.emoji,
+            })),
+            total: getTotal(),
+          }),
+        }).catch(() => {});
+      } catch (e) {
+        // ignore
+      }
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [items, pathname, isAdmin, getTotal]);
 
   // Track storefront visitor activity for the Operations Radar (Excludes admin pages)
   useEffect(() => {
@@ -51,6 +93,8 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <main className="flex-1">{children}</main>
       <Footer />
       <CartDrawer />
+      <WhatsAppFloat />
+      <RecentOrderToast />
     </>
   );
 };

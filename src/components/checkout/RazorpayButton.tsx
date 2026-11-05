@@ -103,17 +103,25 @@ export const RazorpayButton: React.FC<RazorpayButtonProps> = ({
           amount: total,
           currency: 'INR',
           items,
-          shipping: formData,
+          coupon_code: coupon?.code,
+          shipping: {
+            ...formData,
+            delivery_fee: deliveryFee,
+          },
         }),
       });
 
       const orderData = await res.json();
+      const activeKeyId =
+        orderData.key_id ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+        'rzp_live_TwPhPdtyvx4ygv';
 
-      if (!res.ok || !orderData.order_id) {
+      if (!res.ok || !orderData.order_id || orderData.simulated) {
         // Fallback demo simulation if live Razorpay keys are not yet configured in env
-        if (orderData.simulated || !process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.startsWith('rzp_live')) {
+        if (orderData.simulated && !activeKeyId.startsWith('rzp_live')) {
           const demoOrderId = orderData.order_id || 'VHP-' + Math.random().toString(36).substring(2, 9).toUpperCase();
-          saveOrderToHistory({
+          await saveOrderToHistory({
             id: demoOrderId,
             items: items.map((i) => ({ ...i, unit_price: i.price })),
             subtotal,
@@ -138,14 +146,18 @@ export const RazorpayButton: React.FC<RazorpayButtonProps> = ({
         throw new Error(orderData.error || 'Failed to create payment order');
       }
 
+      if (!isScriptLoaded) {
+        throw new Error('Unable to load Razorpay secure checkout. Please check your internet connection.');
+      }
+
       // Open Razorpay Standard Checkout
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_default',
-        amount: total * 100,
-        currency: 'INR',
+        key: activeKeyId,
+        amount: orderData.amount || Math.round(total * 100),
+        currency: orderData.currency || 'INR',
         name: 'Vishnu Home Products',
         description: 'Authentic Homemade Food & Pickles',
-        image: '/logo.svg',
+        image: '/logo.png',
         order_id: orderData.order_id,
         handler: async function (response: any) {
           try {
@@ -200,7 +212,7 @@ export const RazorpayButton: React.FC<RazorpayButtonProps> = ({
           contact: formData.phone,
         },
         theme: {
-          color: '#d97706',
+          color: '#c81d25',
         },
       };
 

@@ -52,10 +52,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, isOpen, onClo
           {/* Header */}
           <div className="flex items-start justify-between border-b pb-6 border-brandBorder">
             <div>
-              <div className="flex items-center gap-1.5">
-                <div className="bg-brandRed text-white font-black text-xl px-2.5 py-0.5 rounded tracking-tighter">
-                  VISHNU
-                </div>
+              <div className="flex items-center gap-2">
+                <img
+                  src="/logo.png"
+                  alt="VISHNU"
+                  className="h-8 w-auto object-contain"
+                />
                 <div className="border border-brandText text-brandText font-bold text-xs px-2 py-0.5 rounded uppercase tracking-wider">
                   Home Products
                 </div>

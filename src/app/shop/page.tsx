@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useMemo, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ChevronRight, Filter } from 'lucide-react';
-import { SAMPLE_PRODUCTS } from '@/lib/data/sampleProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { FilterSidebar } from '@/components/shop/FilterSidebar';
 import { SortDropdown, SortOption } from '@/components/shop/SortDropdown';
 import { ProductGrid } from '@/components/shop/ProductGrid';
@@ -13,6 +13,7 @@ function ShopContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('category') || 'all';
   const searchQuery = searchParams.get('q') || '';
+  const { products } = useProducts();
 
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [maxPrice, setMaxPrice] = useState<number>(600);
@@ -21,15 +22,22 @@ function ShopContent() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState<boolean>(false);
 
+  // Sync category when URL param changes (e.g. clicking Navbar quick links)
+  useEffect(() => {
+    setSelectedCategory(initialCategory);
+    setCurrentPage(1);
+  }, [initialCategory]);
+
   const itemsPerPage = 8;
 
   // Filter and Sort Logic
   const filteredProducts = useMemo(() => {
-    return SAMPLE_PRODUCTS.filter((product) => {
+    return products.filter((product) => {
       // Category check
       if (
         selectedCategory !== 'all' &&
-        product.category.toLowerCase() !== selectedCategory.toLowerCase()
+        !product.category.toLowerCase().includes(selectedCategory.toLowerCase()) &&
+        !selectedCategory.toLowerCase().includes(product.category.toLowerCase())
       ) {
         return false;
       }
@@ -62,7 +70,7 @@ function ShopContent() {
       if (sortBy === 'newest') return (b.sort_order || 0) - (a.sort_order || 0);
       return (a.sort_order || 0) - (b.sort_order || 0); // popular default
     });
-  }, [selectedCategory, searchQuery, maxPrice, inStockOnly, sortBy]);
+  }, [products, selectedCategory, searchQuery, maxPrice, inStockOnly, sortBy]);
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
   const paginatedProducts = filteredProducts.slice(

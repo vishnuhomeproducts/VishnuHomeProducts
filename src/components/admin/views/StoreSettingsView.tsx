@@ -13,6 +13,8 @@ import {
   EyeOff,
   ShieldCheck,
   AlertCircle,
+  Megaphone,
+  Sparkles,
 } from 'lucide-react';
 
 export const StoreSettingsView: React.FC = () => {
@@ -23,6 +25,10 @@ export const StoreSettingsView: React.FC = () => {
   const [standardDeliveryFee, setStandardDeliveryFee] = useState(50);
   const [codEnabled, setCodEnabled] = useState(true);
   const [gstin, setGstin] = useState('29AAAAA0000A1Z5');
+  const [announcementText, setAnnouncementText] = useState('Free shipping on orders above ₹499');
+  const [promoCode, setPromoCode] = useState('VISHNU10');
+  const [promoSubtext, setPromoSubtext] = useState('for 10% off your order');
+  const [flashSaleActive, setFlashSaleActive] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
 
   // Security PIN states
@@ -33,7 +39,7 @@ export const StoreSettingsView: React.FC = () => {
   const [pinSuccess, setPinSuccess] = useState(false);
   const [pinError, setPinError] = useState('');
 
-  // Load saved PIN on mount
+  // Load saved PIN & store settings on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem('lucky_admin_pin');
@@ -41,10 +47,49 @@ export const StoreSettingsView: React.FC = () => {
         setCurrentPin(saved);
       }
     } catch (e) {}
+
+    fetch('/api/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.settings) {
+          const s = data.settings;
+          if (s.storeName) setStoreName(s.storeName);
+          if (s.storePhone) setStorePhone(s.storePhone);
+          if (s.storeEmail) setStoreEmail(s.storeEmail);
+          if (s.gstin) setGstin(s.gstin);
+          if (s.freeShippingThreshold !== undefined) setFreeShippingThreshold(Number(s.freeShippingThreshold));
+          if (s.standardDeliveryFee !== undefined) setStandardDeliveryFee(Number(s.standardDeliveryFee));
+          if (s.codEnabled !== undefined) setCodEnabled(Boolean(s.codEnabled));
+          if (s.announcementText) setAnnouncementText(s.announcementText);
+          if (s.promoCode) setPromoCode(s.promoCode);
+          if (s.promoSubtext) setPromoSubtext(s.promoSubtext);
+          if (s.flashSaleActive !== undefined) setFlashSaleActive(Boolean(s.flashSaleActive));
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  const handleSaveStoreConfig = (e: React.FormEvent) => {
+  const handleSaveStoreConfig = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeName,
+          storePhone,
+          storeEmail,
+          gstin,
+          freeShippingThreshold,
+          standardDeliveryFee,
+          codEnabled,
+          announcementText,
+          promoCode: promoCode.toUpperCase(),
+          promoSubtext,
+          flashSaleActive,
+        }),
+      });
+    } catch (err) {}
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
@@ -198,6 +243,78 @@ export const StoreSettingsView: React.FC = () => {
       </div>
 
       <form onSubmit={handleSaveStoreConfig} className="space-y-6">
+        {/* Live Top Announcement Bar & Flash Sale Banner Controller */}
+        <div className="clay-card p-5 sm:p-6 space-y-4 border-l-4 border-l-brandRed">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h4 className="font-bold text-xs uppercase tracking-wider text-brandText flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-brandRed" />
+              <span>Live Storefront Top Announcement &amp; Promo Banner</span>
+            </h4>
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-brandText">
+              <input
+                type="checkbox"
+                checked={flashSaleActive}
+                onChange={(e) => setFlashSaleActive(e.target.checked)}
+                className="w-4 h-4 rounded text-brandRed focus:ring-brandRed"
+              />
+              <Sparkles className="w-3.5 h-3.5 text-brandRed" />
+              <span>Show Promo Code Highlight</span>
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                Left Shipping / Offer Text
+              </label>
+              <input
+                type="text"
+                value={announcementText}
+                onChange={(e) => setAnnouncementText(e.target.value)}
+                placeholder="Free shipping on orders above ₹499"
+                className="w-full px-3.5 py-2.5 clay-inset text-brandText focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                Featured Coupon Code
+              </label>
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="VISHNU10"
+                className="w-full px-3.5 py-2.5 clay-inset font-mono font-bold uppercase text-brandRed focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                Promo Offer Subtext
+              </label>
+              <input
+                type="text"
+                value={promoSubtext}
+                onChange={(e) => setPromoSubtext(e.target.value)}
+                placeholder="for 10% off your order"
+                className="w-full px-3.5 py-2.5 clay-inset text-brandText focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Live Preview */}
+          <div className="rounded-xl bg-brandDark text-[11px] text-white/80 py-2 px-3.5 flex flex-wrap items-center justify-between gap-2">
+            <span>📦 {announcementText}</span>
+            {flashSaleActive && promoCode && (
+              <span className="text-amber-300 font-medium">
+                🎉 Use code <strong className="underline font-bold">{promoCode}</strong> {promoSubtext}
+              </span>
+            )}
+            <span className="text-[10px] font-mono text-white/50">Live Storefront Preview</span>
+          </div>
+        </div>
+
         {/* Business Information: Clay Card */}
         <div className="clay-card p-5 sm:p-6 space-y-4">
           <h4 className="font-bold text-xs uppercase tracking-wider text-brandText flex items-center gap-2">

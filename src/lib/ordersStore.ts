@@ -491,11 +491,37 @@ export async function archiveOrderInStore(id: string): Promise<boolean> {
   return true;
 }
 
+export const getAllOrdersFromStore = getAllAdminOrders;
+
 export async function getAbandonedCarts(): Promise<AbandonedCart[]> {
   if (!global.__vishnu_in_flight_carts) {
     global.__vishnu_in_flight_carts = [...INITIAL_IN_FLIGHT_CARTS];
   }
   return global.__vishnu_in_flight_carts;
+}
+
+export async function upsertAbandonedCart(cartData: Partial<AbandonedCart> & { id: string }): Promise<AbandonedCart[]> {
+  const carts = await getAbandonedCarts();
+  const idx = carts.findIndex((c) => c.id === cartData.id);
+  const entry: AbandonedCart = {
+    id: cartData.id,
+    customer_name: cartData.customer_name || 'Live Storefront Shopper',
+    customer_phone: cartData.customer_phone || '',
+    customer_email: cartData.customer_email || '',
+    city: cartData.city || 'Mangaluru',
+    items: cartData.items || [],
+    total: cartData.total || 0,
+    last_active: new Date().toISOString(),
+    recovered: Boolean(cartData.recovered),
+  };
+
+  if (idx >= 0) {
+    carts[idx] = { ...carts[idx], ...entry };
+  } else {
+    carts.unshift(entry);
+  }
+  global.__vishnu_in_flight_carts = carts;
+  return carts;
 }
 
 export async function getCustomersDirectory(): Promise<CustomerProfile[]> {
