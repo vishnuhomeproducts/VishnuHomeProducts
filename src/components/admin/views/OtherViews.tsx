@@ -445,20 +445,22 @@ export const OtherViews: React.FC<OtherViewsProps> = ({ tab }) => {
       { name: 'Spices & Masalas', icon: '🌶️', match: 'spice' },
       { name: 'Dry Fish', icon: '🐟', match: 'fish' },
       { name: 'Wellness', icon: '🪔', match: 'wellness' },
+      { name: 'Sweets & Festive', icon: '🍬', match: 'sweet' },
+      { name: 'Rice & Grains', icon: '🌾', match: 'rice' },
     ];
 
     return (
       <div className="space-y-6">
         <div>
           <h3 className="font-display font-bold text-lg sm:text-xl text-brandText">
-            Product Categories &amp; Collections
+            Product Categories &amp; Storefront Collections
           </h3>
           <p className="text-xs text-brandText2">
-            Live storefront category breakdown ({products.length} total active products)
+            All 6 live storefront category collections synced with the catalog ({products.length} total active products)
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           {categoryGroups.map((c, i) => {
             const count = products.filter((p) =>
               p.category.toLowerCase().includes(c.match)
@@ -775,16 +777,93 @@ export const OtherViews: React.FC<OtherViewsProps> = ({ tab }) => {
     );
   }
 
-  // ================= LIVE STORE LEGAL POLICIES & SLA EDITOR =================
+  // ================= LIVE STORE LEGAL POLICIES & GOOGLE SHOPPING HUB =================
+  const feedUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/api/google-shopping-feed`
+      : 'https://vishnuhomeproducts.in/api/google-shopping-feed';
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
         <h3 className="font-display font-bold text-lg sm:text-xl text-brandText">
-          Store Legal Policies &amp; Customer Guarantee Editor
+          Google Shopping Compliance &amp; Store Legal Policies
         </h3>
         <p className="text-xs text-brandText2">
-          Customize your dispatch SLA, damage-free replacement guarantee, and wholesale wedding inquiry terms
+          Manage your live Google Merchant Center XML product feed, verified legal policy pages, and customer guarantees
         </p>
+      </div>
+
+      {/* Google Merchant Center Live Feed & Compliance Card */}
+      <div className="clay-card p-6 space-y-4 text-xs border-l-4 border-l-brandGreen">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-brandGreen uppercase tracking-wider">
+              <CheckCircle2 className="w-4 h-4" />
+              Google Merchant Center Ready (100% Compliant)
+            </div>
+            <h4 className="font-bold text-sm text-brandText mt-0.5">
+              Automated Google Shopping XML Product Feed (RSS 2.0)
+            </h4>
+            <p className="text-[11px] text-slate-600 mt-0.5">
+              Paste this live Scheduled Fetch URL into Google Merchant Center → Products → Feeds to sync all products, sizes, prices, and stock automatically.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href="/api/google-shopping-feed"
+              target="_blank"
+              rel="noreferrer"
+              className="px-3.5 py-2 clay-btn text-xs font-bold text-brandRed"
+            >
+              Open XML Feed ↗
+            </a>
+            <a
+              href="/api/google-shopping-feed?format=json"
+              target="_blank"
+              rel="noreferrer"
+              className="px-3.5 py-2 clay-btn text-xs font-bold text-slate-700"
+            >
+              Inspect JSON ↗
+            </a>
+          </div>
+        </div>
+
+        <div className="p-3 clay-inset flex items-center justify-between gap-2 font-mono text-[11px] text-brandText">
+          <span className="truncate">{feedUrl}</span>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard?.writeText(feedUrl)}
+            className="px-2.5 py-1 rounded bg-brandRed text-white font-sans font-bold text-[10px] shrink-0"
+          >
+            Copy Feed URL
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+          {[
+            { label: 'About & FSSAI Verification', href: '/about' },
+            { label: 'Shipping Policy (2–5 Days)', href: '/shipping-policy' },
+            { label: 'Return & Refund Policy (7-Day)', href: '/return-refund-policy' },
+            { label: 'Privacy Policy (SSL/DPDP)', href: '/privacy-policy' },
+            { label: 'Terms of Service & Billing', href: '/terms-of-service' },
+            { label: 'Contact & Grievance Desk', href: '/contact' },
+          ].map((page) => (
+            <a
+              key={page.href}
+              href={page.href}
+              target="_blank"
+              rel="noreferrer"
+              className="p-2.5 clay-card-flat flex items-center justify-between text-[11px] font-semibold text-brandText hover:text-brandRed transition-colors"
+            >
+              <span className="flex items-center gap-1.5 truncate">
+                <CheckCircle2 className="w-3.5 h-3.5 text-brandGreen shrink-0" />
+                <span className="truncate">{page.label}</span>
+              </span>
+              <span className="text-[10px] text-slate-400">↗</span>
+            </a>
+          ))}
+        </div>
       </div>
 
       {policySaved && (

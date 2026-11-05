@@ -5,6 +5,7 @@ import { UseFormReturn } from 'react-hook-form';
 import { CheckoutFormData } from '@/lib/schemas/checkout';
 import { Input } from '@/components/ui/Input';
 import { Truck, MapPin, CreditCard, Banknote } from 'lucide-react';
+import { useCart } from '@/hooks/useCart';
 
 interface AddressFormProps {
   form: UseFormReturn<CheckoutFormData>;
@@ -18,7 +19,9 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
     setValue,
   } = form;
 
+  const { codEnabled } = useCart();
   const selectedPaymentMethod = watch('paymentMethod');
+  const isGift = watch('isGift');
 
   const quickAddresses = [
     {
@@ -175,6 +178,33 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
               />
             </div>
           </div>
+
+          {/* Festive Gift Note & Custom Greeting Card Toggle */}
+          <div className="pt-2 border-t border-brandBorder space-y-2.5">
+            <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-brandText">
+              <input
+                type="checkbox"
+                {...register('isGift')}
+                className="w-4 h-4 rounded text-brandRed accent-brandRed"
+              />
+              <span>🎀 Sending this as a Gift? Add a FREE Personalized Mangalore Greeting Card</span>
+            </label>
+
+            {isGift && (
+              <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2">
+                <label className="block text-[11px] font-bold text-brandText">
+                  Personal Gift Note (Printed on a Heritage Greeting Card inside the box)
+                </label>
+                <textarea
+                  rows={2}
+                  maxLength={240}
+                  placeholder="e.g. Dear Amma & Appa, sending you fresh homemade flavours from Mangalore with lots of love!"
+                  {...register('giftMessage')}
+                  className="w-full px-3 py-2 text-xs bg-white border border-brandBorder rounded-button focus:outline-none focus:border-brandAccent"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -211,30 +241,37 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
             </div>
           </label>
 
-          {/* Cash on Delivery */}
-          <label
-            className={`flex items-start gap-3 p-4 rounded-card border cursor-pointer transition-all ${
-              selectedPaymentMethod === 'cod'
-                ? 'border-brandAccent bg-brandAccent-light/40 ring-1 ring-brandAccent'
-                : 'border-brandBorder bg-white hover:border-brandAccent/40'
-            }`}
-          >
-            <input
-              type="radio"
-              value="cod"
-              {...register('paymentMethod')}
-              className="mt-1 text-brandAccent accent-brandAccent"
-            />
-            <div>
-              <div className="flex items-center gap-1.5 font-bold text-xs text-brandText">
-                <Banknote className="w-3.5 h-3.5 text-brandAccent" />
-                <span>Cash on Delivery (COD)</span>
+          {/* Cash on Delivery (Controlled by Admin StoreSettingsView) */}
+          {codEnabled !== false ? (
+            <label
+              className={`flex items-start gap-3 p-4 rounded-card border cursor-pointer transition-all ${
+                selectedPaymentMethod === 'cod'
+                  ? 'border-brandAccent bg-brandAccent-light/40 ring-1 ring-brandAccent'
+                  : 'border-brandBorder bg-white hover:border-brandAccent/40'
+              }`}
+            >
+              <input
+                type="radio"
+                value="cod"
+                {...register('paymentMethod')}
+                className="mt-1 text-brandAccent accent-brandAccent"
+              />
+              <div>
+                <div className="flex items-center gap-1.5 font-bold text-xs text-brandText">
+                  <Banknote className="w-3.5 h-3.5 text-brandAccent" />
+                  <span>Cash on Delivery (COD)</span>
+                </div>
+                <p className="text-[11px] text-brandText2 mt-1">
+                  Pay in cash or UPI QR at your doorstep upon delivery.
+                </p>
               </div>
-              <p className="text-[11px] text-brandText2 mt-1">
-                Pay in cash or UPI QR at your doorstep upon delivery.
-              </p>
+            </label>
+          ) : (
+            <div className="p-4 rounded-card border border-brandBorder bg-brandBg text-xs text-brandText3 flex items-center gap-2">
+              <Banknote className="w-4 h-4 text-brandText3 shrink-0" />
+              <span>Cash on Delivery is currently paused. Please use Online Payment (UPI / Cards).</span>
             </div>
-          </label>
+          )}
         </div>
       </div>
 

@@ -59,6 +59,7 @@ export interface Coupon {
   discount_type: 'percent' | 'fixed';
   discount_value: number;
   min_order?: number;
+  active?: boolean;
 }
 
 export interface ShippingAddress {
@@ -70,6 +71,8 @@ export interface ShippingAddress {
   city: string;
   state: string;
   pincode: string;
+  isGift?: boolean;
+  giftMessage?: string;
 }
 
 export interface OrderItem {

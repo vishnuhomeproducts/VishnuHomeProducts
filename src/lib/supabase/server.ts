@@ -34,10 +34,29 @@ export function createClient() {
   );
 }
 
+export function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  if (!url || !key) return false;
+  if (
+    url.includes('your-project') ||
+    url.includes('placeholder') ||
+    key.includes('placeholder') ||
+    key.endsWith('...')
+  ) {
+    return false;
+  }
+  return true;
+}
+
 // Service role client for server-side admin operations (bypasses RLS)
 export function createAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-service-key';
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase not configured — using fast local/memory store');
+  }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   return createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {

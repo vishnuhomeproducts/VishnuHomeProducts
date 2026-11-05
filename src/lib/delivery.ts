@@ -21,8 +21,8 @@ export function calculateDeliveryFee(
     };
   }
 
-  if (subtotal >= 999) {
-    return { fee: 0, isLocal: false, deliveryType: 'Free Shipping (> ₹999)' };
+  if (subtotal >= 499) {
+    return { fee: 0, isLocal: false, deliveryType: 'Free Shipping (> ₹499)' };
   }
 
   const cleanPincode = (pincode || '').trim();
@@ -34,9 +34,9 @@ export function calculateDeliveryFee(
 
   // Coastal / Mangaluru Regional (575xxx, 576xxx)
   if (cleanPincode.startsWith('575') || cleanPincode.startsWith('576')) {
-    return { fee: 60, isLocal: false, deliveryType: 'MANGALURU_REGIONAL' };
+    return { fee: 50, isLocal: false, deliveryType: 'MANGALURU_REGIONAL' };
   }
 
   // Pan-India Surface Courier
-  return { fee: 80, isLocal: false, deliveryType: 'PAN_INDIA_COURIER' };
+  return { fee: 50, isLocal: false, deliveryType: 'PAN_INDIA_COURIER' };
 }

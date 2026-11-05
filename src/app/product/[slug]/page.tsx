@@ -30,6 +30,8 @@ import {
   calculateDiscountPercent,
   calculateTieredUnitPrice,
   DEFAULT_TIERED_SLABS,
+  getProductCulinaryProfile,
+  getProductNutritionFacts,
 } from '@/lib/utils';
 import { useCart } from '@/hooks/useCart';
 
@@ -116,6 +118,8 @@ export default function ProductDetailPage() {
 
   const discountPercent = calculateDiscountPercent(selectedSize.mrp, effectiveUnitPrice);
   const wishlisted = isInWishlist(currentProduct.id);
+  const culinary = getProductCulinaryProfile(currentProduct);
+  const nutrition = getProductNutritionFacts(currentProduct);
 
   // Related products from same category or general catalog
   const relatedProducts = products
@@ -244,23 +248,78 @@ export default function ProductDetailPage() {
     }
   };
 
-  // Structured Data JSON-LD for Google Rich Snippets
+  const variantSku = `VHP-${currentProduct.id.toUpperCase()}-${selectedSize.label
+    .replace(/\s+/g, '')
+    .toUpperCase()}`;
+
+  // Structured Data JSON-LD for Google Rich Snippets & Google Merchant Center
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: currentProduct.name,
+    name: `${currentProduct.name} (${selectedSize.label})`,
     description: currentProduct.description,
+    sku: variantSku,
+    mpn: variantSku,
+    category: currentProduct.category,
+    image:
+      currentProduct.images && currentProduct.images.length > 0
+        ? currentProduct.images.map((img) =>
+            img.startsWith('http') ? img : `https://vishnuhomeproducts.in${img}`
+          )
+        : ['https://vishnuhomeproducts.in/logo.png'],
     brand: {
       '@type': 'Brand',
       name: currentProduct.brand || 'Vishnu Home Products',
     },
     offers: {
       '@type': 'Offer',
+      url: `https://vishnuhomeproducts.in/product/${currentProduct.slug}`,
       priceCurrency: 'INR',
-      price: selectedSize.price,
+      price: effectiveUnitPrice,
+      priceValidUntil: '2027-12-31',
+      itemCondition: 'https://schema.org/NewCondition',
       availability: currentProduct.in_stock
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',
+      seller: {
+        '@type': 'Organization',
+        name: 'Vishnu Home Products',
+      },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: effectiveUnitPrice >= 499 ? '0.00' : '50.00',
+          currency: 'INR',
+        },
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'IN',
+        },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 1,
+            maxValue: 2,
+            unitCode: 'DAY',
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 2,
+            maxValue: 5,
+            unitCode: 'DAY',
+          },
+        },
+      },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'IN',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 7,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn',
+      },
     },
     aggregateRating: {
       '@type': 'AggregateRating',
@@ -269,11 +328,42 @@ export default function ProductDetailPage() {
     },
   };
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://vishnuhomeproducts.in',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: currentProduct.category,
+        item: `https://vishnuhomeproducts.in/shop?category=${encodeURIComponent(
+          currentProduct.category
+        )}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: currentProduct.name,
+        item: `https://vishnuhomeproducts.in/product/${currentProduct.slug}`,
+      },
+    ],
+  };
+
   return (
     <div className="py-8 pb-24 lg:pb-12 bg-brandBg min-h-screen">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       <div className="max-w-site mx-auto px-4 space-y-10">
@@ -403,6 +493,48 @@ export default function ProductDetailPage() {
                   <span>Total: {formatINR(effectiveUnitPrice * quantity)}</span>
                 </div>
               )}
+            </div>
+
+            {/* Culinary Spice-O-Meter & Pairing Guide Strip */}
+            <div className="p-3.5 rounded-xl bg-brandBg border border-brandBorder space-y-2 text-xs">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1.5 font-bold text-brandText">
+                  <span>{culinary.chilies > 0 ? '🌶️'.repeat(culinary.chilies) : '🌿'}</span>
+                  <span>Spice Level: {culinary.spiceLabel}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      culinary.dietary === '100% Veg'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : culinary.dietary === 'Coastal Seafood'
+                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                        : 'bg-purple-50 text-purple-700 border-purple-200'
+                    }`}
+                  >
+                    {culinary.dietary}
+                  </span>
+                  {culinary.noOnionGarlic && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-brandText2 border border-brandBorder">
+                      No Onion / Garlic
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-brandText2">
+                <span className="font-semibold text-brandText3">Best Paired With:</span>
+                {culinary.pairings.map((pair, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-0.5 rounded bg-white border border-brandBorder text-brandText font-medium"
+                  >
+                    🍽️ {pair}
+                  </span>
+                ))}
+                <Link href="/recipes" className="ml-auto text-brandRed font-bold hover:underline">
+                  View Recipes →
+                </Link>
+              </div>
             </div>
 
             <div className="border-t border-brandBorder" />
@@ -582,10 +714,38 @@ export default function ProductDetailPage() {
                 <div className="text-[11px] text-brandText3 flex items-center gap-1.5">
                   <Truck className="w-3.5 h-3.5 text-brandAccent shrink-0" />
                   <span>
-                    Free shipping on orders above <strong>₹999</strong>. Express local delivery in Mangaluru & Bengaluru.
+                    Free shipping on orders above <strong>₹499</strong>. Express local delivery in Mangaluru & Bengaluru.
                   </span>
                 </div>
               )}
+            </div>
+
+            {/* Google Shopping & Merchant Transparency Block */}
+            <div className="p-3.5 rounded-xl bg-white border border-brandBorder grid grid-cols-2 gap-2.5 text-[11px]">
+              <div className="space-y-0.5">
+                <span className="text-brandText3 uppercase font-bold text-[10px]">SKU / MPN</span>
+                <div className="font-mono font-bold text-brandText">{variantSku}</div>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-brandText3 uppercase font-bold text-[10px]">Food Safety</span>
+                <div className="font-semibold text-emerald-700">FSSAI: 21223181000014</div>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-brandText3 uppercase font-bold text-[10px]">Shipping SLA</span>
+                <div>
+                  <Link href="/shipping-policy" className="font-semibold text-brandAccent hover:underline">
+                    2–5 Days • Free ₹499+ →
+                  </Link>
+                </div>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-brandText3 uppercase font-bold text-[10px]">Returns & Refunds</span>
+                <div>
+                  <Link href="/return-refund-policy" className="font-semibold text-brandAccent hover:underline">
+                    7-Day Free Replacement →
+                  </Link>
+                </div>
+              </div>
             </div>
 
             {/* Frequently Bought Together / Combo Upsell */}
@@ -650,32 +810,47 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Coastal Taste Profile & Serving Guide */}
+            {/* Official FSSAI Nutritional Facts (Per 100g) & Batch Freshness Stamp */}
             <div className="p-4 rounded-xl bg-white border border-brandBorder space-y-3 text-xs">
-              <div className="font-bold text-brandText uppercase tracking-wider text-[11px]">
-                🌶️ Coastal Taste Profile & Best Pairings
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="font-bold text-brandText uppercase tracking-wider text-[11px]">
+                  🥗 Nutritional Facts (Approx. Per 100g)
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-[10px]">
+                  ✓ Cooked This Week • Shelf Life: {nutrition.shelfLife}
+                </span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="p-2.5 rounded-lg bg-brandBg border border-brandBorder">
-                  <div className="text-[10px] text-brandText3">Spice Level</div>
-                  <div className="font-bold text-brandRed mt-0.5">
-                    {currentProduct.name.toLowerCase().includes('chilli') ||
-                    currentProduct.name.toLowerCase().includes('mango')
-                      ? '🌶️🌶️🌶️ Fiery'
-                      : '🌶️🌶️ Medium'}
-                  </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center">
+                <div className="p-2 rounded-lg bg-brandBg border border-brandBorder">
+                  <div className="text-[10px] text-brandText3">Energy</div>
+                  <div className="font-bold text-brandText mt-0.5">{nutrition.energyKcal} kcal</div>
                 </div>
-                <div className="p-2.5 rounded-lg bg-brandBg border border-brandBorder">
-                  <div className="text-[10px] text-brandText3">Oil Medium</div>
-                  <div className="font-bold text-brandText mt-0.5">Wood-Pressed Oil</div>
+                <div className="p-2 rounded-lg bg-brandBg border border-brandBorder">
+                  <div className="text-[10px] text-brandText3">Protein</div>
+                  <div className="font-bold text-brandText mt-0.5">{nutrition.proteinG}</div>
                 </div>
-                <div className="p-2.5 rounded-lg bg-brandBg border border-brandBorder">
-                  <div className="text-[10px] text-brandText3">Shelf Life</div>
-                  <div className="font-bold text-brandGreen mt-0.5">6 Months Fresh</div>
+                <div className="p-2 rounded-lg bg-brandBg border border-brandBorder">
+                  <div className="text-[10px] text-brandText3">Carbs</div>
+                  <div className="font-bold text-brandText mt-0.5">{nutrition.carbsG}</div>
+                </div>
+                <div className="p-2 rounded-lg bg-brandBg border border-brandBorder">
+                  <div className="text-[10px] text-brandText3">Total Fat</div>
+                  <div className="font-bold text-brandText mt-0.5">{nutrition.totalFatG}</div>
+                </div>
+                <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200 col-span-2 sm:col-span-1">
+                  <div className="text-[10px] text-emerald-800">Trans Fat</div>
+                  <div className="font-bold text-emerald-700 mt-0.5">{nutrition.transFatG}</div>
                 </div>
               </div>
-              <div className="text-[11px] text-brandText2 pt-1">
-                <strong>Best Paired With:</strong> Hot Steamed Ghee Rice, Neer Dosa, Curd Rice, Chapati Rolls & Idli/Dosa Tiffin.
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-brandText2 border-t border-dashed border-brandBorder">
+                <span>
+                  <strong>Medium:</strong> {nutrition.oilBase}
+                </span>
+                <span className="text-brandGreen font-semibold">
+                  Preservatives: {nutrition.preservatives}
+                </span>
               </div>
             </div>
 

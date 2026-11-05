@@ -35,6 +35,43 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'OnlineStore',
+    name: 'Vishnu Home Products',
+    url: 'https://vishnuhomeproducts.in',
+    logo: 'https://vishnuhomeproducts.in/logo.png',
+    description:
+      'Authentic homemade Mangalorean pickles, thokkus, coastal spices, sun-dried fish, and Ayurvedic wellness products. FSSAI License: 21223181000014.',
+    telephone: '+91-98450-12345',
+    email: 'support@vishnuhomeproducts.in',
+    priceRange: '₹120 - ₹999',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Kadri Temple Road',
+      addressLocality: 'Mangaluru',
+      addressRegion: 'Karnataka',
+      postalCode: '575002',
+      addressCountry: 'IN',
+    },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+91-98450-12345',
+      contactType: 'customer service',
+      email: 'support@vishnuhomeproducts.in',
+      areaServed: 'IN',
+      availableLanguage: ['English', 'Kannada', 'Hindi', 'Tulu'],
+    },
+    hasMerchantReturnPolicy: {
+      '@type': 'MerchantReturnPolicy',
+      applicableCountry: 'IN',
+      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+      merchantReturnDays: 7,
+      returnMethod: 'https://schema.org/ReturnByMail',
+      returnFees: 'https://schema.org/FreeReturn',
+    },
+  };
+
   return (
     <html lang="en">
       <head>
@@ -43,6 +80,10 @@ export default function RootLayout({
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
       </head>
       <body className="min-h-screen flex flex-col bg-brandBg text-brandText antialiased">

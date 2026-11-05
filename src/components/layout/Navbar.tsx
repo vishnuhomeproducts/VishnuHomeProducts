@@ -16,6 +16,7 @@ const QUICK_LINKS = [
   { name: 'Spices', href: '/shop?category=Spices+%26+Masalas' },
   { name: 'Dry Fish', href: '/shop?category=Dry+Fish' },
   { name: 'Combos 🎁', href: '/combos' },
+  { name: 'Recipes 👩‍🍳', href: '/recipes' },
   { name: 'Track Order', href: '/track-order' },
 ];
 

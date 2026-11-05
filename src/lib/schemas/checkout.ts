@@ -11,6 +11,8 @@ export const checkoutSchema = z.object({
   pincode: z.string().regex(/^\d{6}$/, 'Please enter a valid 6-digit PIN code'),
   paymentMethod: z.enum(['razorpay', 'cod']).default('razorpay'),
   saveAddress: z.boolean().optional(),
+  isGift: z.boolean().optional(),
+  giftMessage: z.string().max(240, 'Gift message must be under 240 characters').optional().or(z.literal('')),
 });
 
 export type CheckoutFormData = z.infer<typeof checkoutSchema>;

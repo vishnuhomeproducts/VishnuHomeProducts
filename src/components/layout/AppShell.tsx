@@ -1,21 +1,33 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { TopBar } from './TopBar';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
-import { CartDrawer } from './CartDrawer';
-import { WhatsAppFloat } from './WhatsAppFloat';
-import { RecentOrderToast } from './RecentOrderToast';
 import { useCart } from '@/hooks/useCart';
+
+// Lazy-load off-screen interactive overlays to keep First Contentful Paint ultra-lightweight
+const CartDrawer = dynamic(
+  () => import('./CartDrawer').then((mod) => mod.CartDrawer),
+  { ssr: false }
+);
+const WhatsAppFloat = dynamic(
+  () => import('./WhatsAppFloat').then((mod) => mod.WhatsAppFloat),
+  { ssr: false }
+);
+const RecentOrderToast = dynamic(
+  () => import('./RecentOrderToast').then((mod) => mod.RecentOrderToast),
+  { ssr: false }
+);
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin') || pathname.startsWith('/lucky');
   const { items, getTotal } = useCart();
 
-  // Sync live customer cart to Admin Live Radar when items change
+  // Sync live customer cart to Admin Live Radar when items change (debounced)
   useEffect(() => {
     if (isAdmin || typeof window === 'undefined' || items.length === 0) return;
 
@@ -48,12 +60,12 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       } catch (e) {
         // ignore
       }
-    }, 1200);
+    }, 2000);
 
     return () => clearTimeout(timer);
-  }, [items, pathname, isAdmin, getTotal]);
+  }, [items, isAdmin, getTotal]);
 
-  // Track storefront visitor activity for the Operations Radar (Excludes admin pages)
+  // Track storefront visitor activity for the Operations Radar (lightweight 30s interval)
   useEffect(() => {
     if (isAdmin || typeof window === 'undefined') return;
 
@@ -69,7 +81,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           };
         }
         sessionData.page = pathname;
-        sessionData.pageTitle = document.title?.replace(' — Authentic Homemade Flavours from Mangalore', '') || 'Storefront';
+        sessionData.pageTitle =
+          document.title?.replace(' — Authentic Homemade Flavours from Mangalore', '') ||
+          'Storefront';
         sessionData.lastPing = now;
         localStorage.setItem('vh_live_storefront_session', JSON.stringify(sessionData));
       } catch (e) {
@@ -78,7 +92,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     };
 
     recordVisit();
-    const interval = setInterval(recordVisit, 4000);
+    const interval = setInterval(recordVisit, 30000);
     return () => clearInterval(interval);
   }, [pathname, isAdmin]);
 

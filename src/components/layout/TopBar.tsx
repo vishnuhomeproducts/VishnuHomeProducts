@@ -2,25 +2,45 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useCart } from '@/hooks/useCart';
+
+let cachedTopBarSettings: any = null;
+let lastSettingsFetch = 0;
 
 export const TopBar: React.FC = () => {
-  const [announcementText, setAnnouncementText] = useState('Free shipping on orders above ₹499');
-  const [promoCode, setPromoCode] = useState('VISHNU10');
-  const [promoSubtext, setPromoSubtext] = useState('for 10% off your order');
-  const [flashSaleActive, setFlashSaleActive] = useState(true);
+  const [announcementText, setAnnouncementText] = useState(
+    cachedTopBarSettings?.announcementText || 'Free shipping on orders above ₹499'
+  );
+  const [promoCode, setPromoCode] = useState(cachedTopBarSettings?.promoCode || 'VISHNU10');
+  const [promoSubtext, setPromoSubtext] = useState(
+    cachedTopBarSettings?.promoSubtext || 'for 10% off your order'
+  );
+  const [flashSaleActive, setFlashSaleActive] = useState(
+    cachedTopBarSettings?.flashSaleActive ?? true
+  );
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    if (cachedTopBarSettings && Date.now() - lastSettingsFetch < 60000) {
+      return;
+    }
     fetch('/api/settings')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.settings) {
+          cachedTopBarSettings = data.settings;
+          lastSettingsFetch = Date.now();
           if (data.settings.announcementText) setAnnouncementText(data.settings.announcementText);
           if (data.settings.promoCode) setPromoCode(data.settings.promoCode);
           if (data.settings.promoSubtext) setPromoSubtext(data.settings.promoSubtext);
           if (data.settings.flashSaleActive !== undefined) {
             setFlashSaleActive(Boolean(data.settings.flashSaleActive));
           }
+          useCart.getState().syncStoreSettings({
+            freeShippingThreshold: data.settings.freeShippingThreshold,
+            standardDeliveryFee: data.settings.standardDeliveryFee,
+            codEnabled: data.settings.codEnabled,
+          });
         }
       })
       .catch(() => {});

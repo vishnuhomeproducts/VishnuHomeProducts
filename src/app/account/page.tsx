@@ -33,7 +33,7 @@ function AccountContent() {
 
   const { user, logout, isAuthenticated } = useAuth();
   const { productIds, toggleWishlist } = useWishlist();
-  const { addItem } = useCart();
+  const { addItem, applyCoupon, openDrawer } = useCart();
   const { products } = useProducts();
 
   const [orders, setOrders] = useState<any[]>([]);
@@ -83,6 +83,11 @@ function AccountContent() {
   }, []);
 
   const wishlistedProducts = products.filter((p) => productIds.includes(p.id));
+  const totalLifetimeSpend = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const coastalCoins = 50 + Math.floor(totalLifetimeSpend / 10);
+  const referralWaLink = `https://wa.me/?text=${encodeURIComponent(
+    'Hey! Try authentic Mangalorean homemade pickles, thokkus & coastal dry fish from Vishnu Home Products (https://vishnuhomeproducts.in). Use code MANGALORE50 for ₹50 OFF + Free Delivery!'
+  )}`;
 
   const handleAddAddress = (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,6 +130,61 @@ function AccountContent() {
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
           </button>
+        </div>
+
+        {/* Vishnu Coastal Rewards Loyalty Wallet & Referral Strip */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-[#2b090b] via-[#1a0808] to-[#3b120b] text-white border border-amber-400/30 shadow-md flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                🪙 Vishnu Coastal Rewards Wallet
+              </div>
+              <div className="font-display text-2xl font-bold text-white">
+                {coastalCoins} Coastal Coins
+              </div>
+              <p className="text-[11px] text-white/75">
+                Earned from your orders (10 Coins per ₹100 spent + 50 Welcome Bonus).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                applyCoupon({
+                  code: 'VISHNU10',
+                  discount_type: 'percent',
+                  discount_value: 10,
+                  min_order: 0,
+                  active: true,
+                });
+                openDrawer();
+              }}
+              className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-brandDark font-bold text-xs shrink-0 shadow-sm"
+            >
+              Redeem 10% OFF →
+            </button>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-[#fff5f3] to-[#fffbeb] border border-red-200/80 shadow-xs flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-brandRed">
+                🎁 Refer Friends &amp; Family
+              </div>
+              <div className="font-display text-lg font-bold text-brandText">
+                Give ₹50 OFF, Get ₹50 OFF
+              </div>
+              <p className="text-[11px] text-brandText2">
+                Share the taste of Mangalore on WhatsApp with code <strong className="font-mono text-brandRed">MANGALORE50</strong>.
+              </p>
+            </div>
+            <a
+              href={referralWaLink}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-xs shrink-0 shadow-sm"
+            >
+              Share on WhatsApp ↗
+            </a>
+          </div>
         </div>
 
         {/* Tab Navigation */}

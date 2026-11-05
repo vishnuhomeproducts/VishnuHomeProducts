@@ -7,6 +7,16 @@ interface CartStore {
   items: CartItem[];
   coupon: Coupon | null;
   isDrawerOpen: boolean;
+  freeShippingThreshold: number;
+  standardDeliveryFee: number;
+  codEnabled: boolean;
+
+  // Sync dynamic store settings from Admin (/api/settings)
+  syncStoreSettings: (settings: {
+    freeShippingThreshold?: number;
+    standardDeliveryFee?: number;
+    codEnabled?: boolean;
+  }) => void;
 
   // Drawer controls
   openDrawer: () => void;
@@ -37,6 +47,25 @@ export const useCart = create<CartStore>()(
       items: [],
       coupon: null,
       isDrawerOpen: false,
+      freeShippingThreshold: 499,
+      standardDeliveryFee: 50,
+      codEnabled: true,
+
+      syncStoreSettings: (settings) =>
+        set((state) => ({
+          freeShippingThreshold:
+            settings.freeShippingThreshold !== undefined
+              ? Number(settings.freeShippingThreshold)
+              : state.freeShippingThreshold,
+          standardDeliveryFee:
+            settings.standardDeliveryFee !== undefined
+              ? Number(settings.standardDeliveryFee)
+              : state.standardDeliveryFee,
+          codEnabled:
+            settings.codEnabled !== undefined
+              ? Boolean(settings.codEnabled)
+              : state.codEnabled,
+        })),
 
       openDrawer: () => set({ isDrawerOpen: true }),
       closeDrawer: () => set({ isDrawerOpen: false }),
@@ -135,7 +164,9 @@ export const useCart = create<CartStore>()(
       getDeliveryFee: () => {
         const subtotal = get().getSubtotal();
         if (subtotal === 0) return 0;
-        return subtotal >= 999 ? 0 : 80;
+        const threshold = get().freeShippingThreshold ?? 499;
+        const fee = get().standardDeliveryFee ?? 50;
+        return subtotal >= threshold ? 0 : fee;
       },
 
       getDiscount: () => {

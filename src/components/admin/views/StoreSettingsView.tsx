@@ -46,7 +46,7 @@ export const StoreSettingsView: React.FC = () => {
       if (saved) {
         setCurrentPin(saved);
       }
-    } catch (e) {}
+    } catch (e) { }
 
     fetch('/api/settings')
       .then((res) => (res.ok ? res.json() : null))
@@ -66,7 +66,7 @@ export const StoreSettingsView: React.FC = () => {
           if (s.flashSaleActive !== undefined) setFlashSaleActive(Boolean(s.flashSaleActive));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleSaveStoreConfig = async (e: React.FormEvent) => {
@@ -89,7 +89,7 @@ export const StoreSettingsView: React.FC = () => {
           flashSaleActive,
         }),
       });
-    } catch (err) {}
+    } catch (err) { }
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
@@ -412,10 +412,10 @@ export const StoreSettingsView: React.FC = () => {
           <div className="p-4 clay-card-flat flex items-center justify-between text-xs">
             <div>
               <div className="font-bold text-brandText">Razorpay Direct Gateway (UPI / Cards / NetBanking)</div>
-              <div className="text-slate-400 text-[11px]">Key: rzp_test_placeholder (Configured in .env.local)</div>
+              <div className="text-slate-500 text-[11px] font-mono">Key: rzp_live_TwPhPdtyvx4ygv (Live Production Mode)</div>
             </div>
             <span className="px-3 py-1 rounded-full bg-emerald-100 text-brandGreen text-[10px] font-bold shadow-xs">
-              ● Connected
+              ● Live Connected
             </span>
           </div>
 

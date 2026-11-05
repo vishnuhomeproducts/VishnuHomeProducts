@@ -194,11 +194,21 @@ export default function OrderConfirmationPage() {
               ))}
             </div>
 
-            {/* Price breakdown */}
+            {/* Price & 5% GST Tax Invoice Breakdown */}
             <div className="space-y-2 pt-4 border-t border-brandBorder text-xs text-brandText2">
               <div className="flex justify-between">
-                <span>Subtotal</span>
+                <span>Subtotal (Inclusive of GST)</span>
                 <span className="font-price font-semibold text-brandText">{formatINR(order.subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-[11px] text-brandText3">
+                <span>Taxable Value (HSN: 20019000)</span>
+                <span className="font-mono">{formatINR(Math.round(order.total / 1.05))}</span>
+              </div>
+              <div className="flex justify-between text-[11px] text-brandText3">
+                <span>CGST (2.5%) + SGST (2.5%)</span>
+                <span className="font-mono">
+                  {formatINR(order.total - Math.round(order.total / 1.05))}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Express Shipping &amp; Packaging</span>
@@ -215,6 +225,10 @@ export default function OrderConfirmationPage() {
               <div className="flex justify-between text-base font-extrabold text-brandText pt-3 border-t border-brandBorder">
                 <span>Total Order Value</span>
                 <span className="text-brandRed font-price text-lg">{formatINR(order.total)}</span>
+              </div>
+              <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-brandText3 border-t border-dashed border-brandBorder">
+                <span>Seller: Vishnu Home Products, Kadri, Mangaluru - 575002</span>
+                <span>FSSAI Lic: 21223181000014 • GST 5% Food Slab</span>
               </div>
             </div>
 
@@ -234,6 +248,12 @@ export default function OrderConfirmationPage() {
                   {order.shipping_address.city}, {order.shipping_address.state} -{' '}
                   <strong>{order.shipping_address.pincode}</strong>
                 </p>
+                {order.shipping_address.giftMessage && (
+                  <div className="mt-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-950">
+                    <div className="font-bold text-[11px]">🎀 Complimentary Mangalore Gift Card Included:</div>
+                    <p className="italic mt-0.5">&ldquo;{order.shipping_address.giftMessage}&rdquo;</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

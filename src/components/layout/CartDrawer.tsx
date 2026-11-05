@@ -21,20 +21,29 @@ import { Button } from '@/components/ui/Button';
 export const CartDrawer: React.FC = () => {
   const {
     items,
+    coupon,
     isDrawerOpen,
     closeDrawer,
     addItem,
     removeItem,
     updateQty,
+    applyCoupon,
     getSubtotal,
     getDeliveryFee,
+    getDiscount,
+    getTotal,
+    freeShippingThreshold: storeThreshold,
   } = useCart();
   const { products } = useProducts();
 
   const subtotal = getSubtotal();
   const deliveryFee = getDeliveryFee();
-  const freeShippingThreshold = 999;
-  const progressPercent = Math.min(100, (subtotal / freeShippingThreshold) * 100);
+  const discount = getDiscount();
+  const total = getTotal();
+  const freeShippingThreshold = storeThreshold || 499;
+  const tier2Threshold = 799;
+  const tier3Threshold = 1199;
+  const progressPercent = Math.min(100, (subtotal / tier3Threshold) * 100);
   const remainingForFreeDelivery = freeShippingThreshold - subtotal;
 
   // Suggest up to 2 products not currently in cart for 1-tap upsell
@@ -101,26 +110,87 @@ export const CartDrawer: React.FC = () => {
             </button>
           </div>
 
-          {/* Free Shipping Progress Bar */}
-          <div className="p-3 bg-brandAccent-light/60 border-b border-brandBorder text-xs">
-            <div className="flex items-center gap-1.5 font-medium text-brandText mb-1.5">
-              <Truck className="w-4 h-4 text-brandAccent shrink-0" />
-              {remainingForFreeDelivery <= 0 ? (
-                <span className="text-brandGreen font-semibold">
-                  🎉 You unlocked FREE Express Delivery!
-                </span>
-              ) : (
-                <span>
-                  Add <strong>{formatINR(remainingForFreeDelivery)}</strong> more for{' '}
-                  <strong>FREE Delivery</strong>
-                </span>
-              )}
+          {/* 3-Stage Multi-Tier Cart Milestone Progress Bar */}
+          <div className="p-3.5 bg-gradient-to-r from-[#fff5f3] to-[#fffbeb] border-b border-brandBorder text-xs space-y-2">
+            <div className="flex items-center justify-between gap-2 font-medium text-brandText">
+              <div className="flex items-center gap-1.5">
+                <Truck className="w-4 h-4 text-brandRed shrink-0" />
+                {subtotal < freeShippingThreshold ? (
+                  <span>
+                    Add <strong className="text-brandRed">{formatINR(freeShippingThreshold - subtotal)}</strong> for{' '}
+                    <strong>FREE Express Delivery</strong>
+                  </span>
+                ) : subtotal < tier2Threshold ? (
+                  <span>
+                    <strong className="text-brandGreen">✓ Free Delivery!</strong> Add{' '}
+                    <strong className="text-brandRed">{formatINR(tier2Threshold - subtotal)}</strong> for{' '}
+                    <strong>10% OFF</strong>
+                  </span>
+                ) : subtotal < tier3Threshold ? (
+                  <span>
+                    <strong className="text-brandGreen">✓ 10% OFF Unlocked!</strong> Add{' '}
+                    <strong className="text-brandRed">{formatINR(tier3Threshold - subtotal)}</strong> for{' '}
+                    <strong>15% OFF</strong>
+                  </span>
+                ) : (
+                  <span className="text-brandGreen font-bold">
+                    🎉 All 3 Rewards Unlocked! (Free Delivery + 15% OFF)
+                  </span>
+                )}
+              </div>
+
+              {subtotal >= tier3Threshold && coupon?.code !== 'FESTIVE15' ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyCoupon({
+                      code: 'FESTIVE15',
+                      discount_type: 'percent',
+                      discount_value: 15,
+                      min_order: 799,
+                      active: true,
+                    })
+                  }
+                  className="px-2 py-0.5 rounded bg-brandRed text-white font-bold text-[10px] shrink-0 shadow-xs"
+                >
+                  Apply 15% OFF
+                </button>
+              ) : subtotal >= tier2Threshold && !coupon ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyCoupon({
+                      code: 'VISHNU10',
+                      discount_type: 'percent',
+                      discount_value: 10,
+                      min_order: 0,
+                      active: true,
+                    })
+                  }
+                  className="px-2 py-0.5 rounded bg-brandRed text-white font-bold text-[10px] shrink-0 shadow-xs"
+                >
+                  Apply 10% OFF
+                </button>
+              ) : null}
             </div>
+
             <div className="w-full bg-brandBorder h-2 rounded-full overflow-hidden">
               <div
-                className="bg-brandAccent h-full transition-all duration-300 rounded-full"
+                className="bg-gradient-to-r from-brandRed to-amber-500 h-full transition-all duration-300 rounded-full"
                 style={{ width: `${progressPercent}%` }}
               />
+            </div>
+
+            <div className="grid grid-cols-3 text-[10px] font-semibold pt-0.5">
+              <div className={subtotal >= freeShippingThreshold ? 'text-brandGreen font-bold' : 'text-brandText3'}>
+                {subtotal >= freeShippingThreshold ? '✓' : '○'} ₹{freeShippingThreshold} Free Ship
+              </div>
+              <div className={`text-center ${subtotal >= tier2Threshold ? 'text-brandGreen font-bold' : 'text-brandText3'}`}>
+                {subtotal >= tier2Threshold ? '✓' : '○'} ₹{tier2Threshold} (10% OFF)
+              </div>
+              <div className={`text-right ${subtotal >= tier3Threshold ? 'text-brandGreen font-bold' : 'text-brandText3'}`}>
+                {subtotal >= tier3Threshold ? '✓' : '○'} ₹{tier3Threshold} (15% OFF)
+              </div>
             </div>
           </div>
 
@@ -291,9 +361,15 @@ export const CartDrawer: React.FC = () => {
                     )}
                   </span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-brandGreen font-semibold">
+                    <span>Discount ({coupon?.code})</span>
+                    <span>-{formatINR(discount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm font-bold text-brandText pt-1 border-t border-brandBorder">
                   <span>Estimated Total</span>
-                  <span className="text-brandAccent">{formatINR(subtotal + deliveryFee)}</span>
+                  <span className="text-brandAccent">{formatINR(total)}</span>
                 </div>
               </div>
 

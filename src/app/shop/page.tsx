@@ -8,6 +8,9 @@ import { useProducts } from '@/hooks/useProducts';
 import { FilterSidebar } from '@/components/shop/FilterSidebar';
 import { SortDropdown, SortOption } from '@/components/shop/SortDropdown';
 import { ProductGrid } from '@/components/shop/ProductGrid';
+import { getProductCulinaryProfile } from '@/lib/utils';
+
+type DietaryFilter = 'all' | 'veg' | 'no-onion-garlic' | 'fiery' | 'mild-tangy' | 'seafood';
 
 function ShopContent() {
   const searchParams = useSearchParams();
@@ -16,6 +19,7 @@ function ShopContent() {
   const { products } = useProducts();
 
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const [dietaryFilter, setDietaryFilter] = useState<DietaryFilter>('all');
   const [maxPrice, setMaxPrice] = useState<number>(600);
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<SortOption>('popular');
@@ -60,6 +64,16 @@ function ShopContent() {
         return false;
       }
 
+      // Culinary / Dietary / Spice-O-Meter filter check
+      if (dietaryFilter !== 'all') {
+        const profile = getProductCulinaryProfile(product);
+        if (dietaryFilter === 'veg' && profile.dietary !== '100% Veg') return false;
+        if (dietaryFilter === 'no-onion-garlic' && !profile.noOnionGarlic) return false;
+        if (dietaryFilter === 'fiery' && profile.chilies < 3) return false;
+        if (dietaryFilter === 'mild-tangy' && profile.chilies >= 3) return false;
+        if (dietaryFilter === 'seafood' && profile.dietary !== 'Coastal Seafood') return false;
+      }
+
       return true;
     }).sort((a, b) => {
       const priceA = a.sizes?.[0]?.price || 0;
@@ -70,7 +84,7 @@ function ShopContent() {
       if (sortBy === 'newest') return (b.sort_order || 0) - (a.sort_order || 0);
       return (a.sort_order || 0) - (b.sort_order || 0); // popular default
     });
-  }, [products, selectedCategory, searchQuery, maxPrice, inStockOnly, sortBy]);
+  }, [products, selectedCategory, dietaryFilter, searchQuery, maxPrice, inStockOnly, sortBy]);
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
   const paginatedProducts = filteredProducts.slice(
@@ -79,10 +93,11 @@ function ShopContent() {
   );
 
   const isFiltersActive =
-    selectedCategory !== 'all' || maxPrice < 600 || inStockOnly || !!searchQuery;
+    selectedCategory !== 'all' || dietaryFilter !== 'all' || maxPrice < 600 || inStockOnly || !!searchQuery;
 
   const handleResetFilters = () => {
     setSelectedCategory('all');
+    setDietaryFilter('all');
     setMaxPrice(600);
     setInStockOnly(false);
     setSortBy('popular');
@@ -138,6 +153,34 @@ function ShopContent() {
             {/* Sort Dropdown */}
             <SortDropdown sortBy={sortBy} onChange={setSortBy} />
           </div>
+        </div>
+
+        {/* Interactive Spice-O-Meter & Dietary Quick Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {[
+            { id: 'all', label: '✨ All Flavours' },
+            { id: 'veg', label: '🌱 100% Pure Veg' },
+            { id: 'no-onion-garlic', label: '🪔 No Onion / No Garlic' },
+            { id: 'fiery', label: '🌶️🌶️🌶️ Fiery Coastal' },
+            { id: 'mild-tangy', label: '🥣 Mild & Tangy' },
+            { id: 'seafood', label: '🐟 Coastal Dry Fish' },
+          ].map((pill) => (
+            <button
+              key={pill.id}
+              type="button"
+              onClick={() => {
+                setDietaryFilter(pill.id as DietaryFilter);
+                setCurrentPage(1);
+              }}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
+                dietaryFilter === pill.id
+                  ? 'bg-brandRed text-white border-brandRed shadow-xs'
+                  : 'bg-white text-brandText2 border-brandBorder hover:border-brandRed/50'
+              }`}
+            >
+              {pill.label}
+            </button>
+          ))}
         </div>
 
         {/* Mobile Filter Drawer / Collapsible */}

@@ -72,51 +72,61 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Column 3: Quick & Help Links */}
+          {/* Column 3: Quick & Help Links (Google Merchant Center Compliant Policies) */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-brandAccent-mid">
-              Customer Care
+              Customer Care & Policies
             </h3>
             <ul className="space-y-2 text-xs text-white/70">
+              <li>
+                <Link href="/about" className="hover:text-brandAccent transition-colors font-semibold text-white/90">
+                  About Us & FSSAI Verification
+                </Link>
+              </li>
+              <li>
+                <Link href="/recipes" className="hover:text-brandAccent transition-colors font-semibold text-amber-300">
+                  👩‍🍳 Coastal Kitchen Recipes & Pairings
+                </Link>
+              </li>
               <li>
                 <Link href="/track-order" className="hover:text-brandAccent transition-colors font-semibold text-white/90">
                   Track Your Order (Live AWB)
                 </Link>
               </li>
               <li>
-                <Link href="/account" className="hover:text-brandAccent transition-colors">
-                  My Account & Orders
+                <Link href="/shipping-policy" className="hover:text-brandAccent transition-colors">
+                  Shipping & Delivery Policy (2–5 Days)
                 </Link>
               </li>
               <li>
-                <Link href="/combos" className="hover:text-brandAccent transition-colors font-semibold text-brandAccent-mid">
-                  🎁 Build Your Own Combo (Save 15%)
+                <Link href="/return-refund-policy" className="hover:text-brandAccent transition-colors">
+                  Return, Replacement & Refund Policy (7-Day)
                 </Link>
               </li>
               <li>
-                <Link href="/bulk-orders" className="hover:text-brandAccent transition-colors">
-                  Wedding Return-Gifts & Bulk Calculator
+                <Link href="/privacy-policy" className="hover:text-brandAccent transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms-of-service" className="hover:text-brandAccent transition-colors">
+                  Terms of Service & Billing Terms
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-brandAccent transition-colors">
-                  Contact Us & Support
+                  Contact Us & Grievance Desk
                 </Link>
               </li>
               <li>
-                <Link href="/contact#shipping" className="hover:text-brandAccent transition-colors">
-                  Shipping & Delivery (3–5 Days)
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact#returns" className="hover:text-brandAccent transition-colors">
-                  7-Day Replacement Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact#terms" className="hover:text-brandAccent transition-colors">
-                  Privacy Policy & FSSAI Terms
-                </Link>
+                <a
+                  href="/api/google-shopping-feed"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-brandAccent transition-colors text-[11px] text-amber-400/90"
+                >
+                  Google Shopping Product Feed (XML)
+                </a>
               </li>
             </ul>
           </div>
