@@ -3,17 +3,52 @@ import { OrderItem, ShippingAddress } from './index';
 export type OrderFulfillmentStatus = 
   | 'pending'
   | 'confirmed'
-  | 'processing' // Packing in warehouse
-  | 'packed'     // Packed & ready for courier
-  | 'shipped'    // In transit with courier
-  | 'out_for_delivery'
-  | 'delivered'
-  | 'cancelled'
+  | 'processing'        // Ready for Dispatch / Kitchen Packaging
+  | 'packed'            // Packed & Ready for Delhivery Pickup
+  | 'pickup_scheduled'  // Pickup Scheduled with Delhivery
+  | 'picked_up'         // Picked Up by Delhivery Executive
+  | 'shipped'           // In Transit with Delhivery
+  | 'out_for_delivery'  // Out for Delivery (Local Hub)
+  | 'delivered'         // Delivered Successfully
+  | 'delivery_failed'   // Delivery Attempt Failed
+  | 'ndr'               // Non-Delivery Report / Action Required
+  | 'rto_initiated'     // Return to Origin Initiated
+  | 'rto_delivered'     // Returned to Bangalore Warehouse
+  | 'cancelled'         // Order or Shipment Cancelled
   | 'returned';
 
 export type PaymentStatus = 'unpaid' | 'paid' | 'failed' | 'refunded' | 'pending_verification';
 export type PaymentMethod = 'razorpay' | 'cod' | 'upi_direct' | 'manual';
-export type DeliveryType = 'pan_india_courier' | 'mangaluru_local' | 'express_air';
+export type DeliveryType = 'bangalore_local' | 'pan_india_courier' | 'express_air' | 'mangaluru_local';
+
+export interface DelhiveryTrackingScan {
+  scan_datetime?: string;
+  scan_location?: string;
+  status: string;
+  status_type?: string;
+  instructions?: string;
+  time?: string;
+  location?: string;
+  details?: string;
+}
+
+export interface DelhiveryShipmentDetails {
+  waybill: string;
+  status: OrderFulfillmentStatus;
+  status_description?: string;
+  courier: 'Delhivery';
+  service_type: 'Express' | 'Surface';
+  origin_city: 'Bangalore';
+  destination_city?: string;
+  pickup_date?: string;
+  expected_delivery?: string;
+  routing_code?: string;
+  label_url?: string;
+  scans?: DelhiveryTrackingScan[];
+  weight_grams?: number;
+  chargeable_weight?: number;
+  shipping_cost?: number;
+}
 
 export interface AdminOrder {
   id: string;
@@ -36,10 +71,12 @@ export interface AdminOrder {
   shipping_email: string;
   shipping_address: ShippingAddress;
   delivery_type: DeliveryType;
-  courier_partner?: string; // e.g. 'Delhivery' | 'BlueDart' | 'DTDC' | 'India Post' | 'Local Delivery'
+  courier_partner?: string; // Exclusively 'Delhivery'
   tracking_awb?: string;
+  tracking_number?: string;
   expected_delivery?: string;
   admin_notes?: string;
+  delhivery_details?: DelhiveryShipmentDetails;
   is_seen?: boolean;
   is_archived?: boolean;
   created_at: string;

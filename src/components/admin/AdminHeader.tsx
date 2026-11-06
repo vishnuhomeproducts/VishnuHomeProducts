@@ -44,8 +44,8 @@ const TAB_TITLES: Record<AdminTab, { title: string; subtitle: string }> = {
     subtitle: 'Real-time cart activity. Monitor and recover uncompleted customer checkouts.',
   },
   shipments: {
-    title: 'Courier Dispatch & Shipments',
-    subtitle: 'Manage AWB tracking, Delhivery, BlueDart, DTDC, and India Post parcel manifests.',
+    title: 'Delhivery Shipments & Dispatch Hub',
+    subtitle: 'Manage Delhivery AWB tracking, Bangalore warehouse pickup, labels, and dispatches.',
   },
   queries: {
     title: 'Customer Support & Queries',

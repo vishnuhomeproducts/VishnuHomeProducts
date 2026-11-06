@@ -62,9 +62,12 @@ export default function ShippingPolicyPage() {
           {/* Detailed Sections */}
           <div className="space-y-4 text-xs sm:text-sm text-brandText2 leading-relaxed">
             <section className="space-y-1.5">
-              <h2 className="font-bold text-base text-brandText">1. Serviceable Locations & Coverage</h2>
+              <h2 className="font-bold text-base text-brandText">1. Serviceable Locations & Exclusive Logistics Partner</h2>
               <p>
-                Vishnu Home Products ships across all serviceable pin codes in India (26,000+ pin codes) from our central kitchen at <strong>Kadri Temple Road, Mangaluru, Karnataka – 575002</strong>. We partner with trusted national couriers including <strong>Delhivery, DTDC, BlueDart, and India Post Speed Post</strong>.
+                Vishnu Home Products ships authentic Mangalorean traditional snacks and homemade products across 26,000+ serviceable PIN codes in India. All orders are packed and dispatched directly from our central fulfillment warehouse in <strong>Bangalore, Karnataka – 560038</strong>.
+              </p>
+              <p>
+                To provide express speed, real-time GPS tracking, and reliable cash on delivery (COD), we partner <strong>exclusively with Delhivery (delhivery.com)</strong> as our sole logistics and shipping provider nationwide.
               </p>
             </section>
 
@@ -72,13 +75,13 @@ export default function ShippingPolicyPage() {
               <h2 className="font-bold text-base text-brandText">2. Shipping Rates & Free Delivery Threshold</h2>
               <ul className="list-disc pl-5 space-y-1">
                 <li>
-                  <strong>Orders ₹499 and above:</strong> ₹0 (100% Free Express Delivery across India).
+                  <strong>Orders ₹499 and above:</strong> ₹0 (100% Free Express Shipping via Delhivery across India).
                 </li>
                 <li>
-                  <strong>Orders below ₹499:</strong> Flat ₹50 – ₹60 shipping fee depending on destination pin code, displayed transparently at checkout prior to payment.
+                  <strong>Orders below ₹499:</strong> Dynamic real-time shipping fee calculated directly via Delhivery rate APIs based on destination PIN code and package weight (Bangalore Local: ₹40, Regional Karnataka/South: ₹50, Pan-India: ₹60).
                 </li>
                 <li>
-                  <strong>No Hidden Fees:</strong> All product prices on our website are inclusive of applicable 5% GST.
+                  <strong>Transparent Billing:</strong> No hidden handling or packaging costs. All taxes (5% GST) are clearly included.
                 </li>
               </ul>
             </section>
@@ -86,17 +89,26 @@ export default function ShippingPolicyPage() {
             <section className="space-y-1.5">
               <h2 className="font-bold text-base text-brandText">3. Order Processing, Cut-Off Time & Dispatch</h2>
               <p>
-                Orders placed before <strong>2:00 PM IST (Monday to Saturday)</strong> begin batch packing the same day and are dispatched within 24–48 hours. Orders placed on Sundays or public holidays are processed on the next working day.
+                Orders placed before <strong>2:00 PM IST (Monday to Saturday)</strong> are scheduled for same-day packing and next-morning Delhivery courier pickup from our Bangalore facility. Orders placed on Sundays or public holidays are dispatched on the next business day.
               </p>
             </section>
 
             <section className="space-y-1.5">
-              <h2 className="font-bold text-base text-brandText">4. Spill-Proof Packaging & Live Order Tracking</h2>
+              <h2 className="font-bold text-base text-brandText">4. Spill-Proof Packaging & Real-Time Delhivery Tracking</h2>
               <p>
-                Every pickle, thokku, oil, and masala jar is heat-induction sealed, wrapped in 3-layer protective bubble cushioning, and packed in corrugated boxes. Once dispatched, you receive a live <strong>AWB Tracking Number</strong> via Email/SMS/WhatsApp, which you can track any time on our{' '}
+                Every snack packet and pickle jar is vacuum-sealed and packed in multi-ply corrugated boxes with shock-absorbent cushioning. Once Delhivery scans the parcel at our Bangalore hub, an instant <strong>Delhivery AWB Waybill</strong> is assigned and sent via SMS and WhatsApp. You can track your shipment live at any time on our{' '}
                 <Link href="/track-order" className="text-brandAccent font-semibold underline">
-                  Live Order Tracking Page
-                </Link>
+                  Delhivery Live Tracking Page
+                </Link>{' '}
+                or directly on{' '}
+                <a
+                  href="https://www.delhivery.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-brandAccent font-semibold underline"
+                >
+                  delhivery.com
+                </a>
                 .
               </p>
             </section>

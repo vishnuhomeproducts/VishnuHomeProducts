@@ -481,38 +481,45 @@ export const StoreSettingsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Shiprocket Logistics Integration */}
-        <div className="clay-card p-5 sm:p-6 space-y-4">
+        {/* Delhivery Exclusive Logistics Integration */}
+        <div className="clay-card p-5 sm:p-6 space-y-4 border-l-4 border-l-brandRed">
           <div className="flex items-center justify-between">
             <h4 className="font-bold text-xs uppercase tracking-wider text-brandText flex items-center gap-2">
               <Truck className="w-4 h-4 text-brandRed" />
-              <span>Shiprocket Courier &amp; Fulfillment API</span>
+              <span>Delhivery Exclusive Logistics &amp; Fulfillment API</span>
             </h4>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-              Ready for Credentials
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+              Exclusive Partner • Bangalore Origin (560038)
             </span>
           </div>
 
           <p className="text-xs text-slate-500">
-            Automated AWB generation, pickup scheduling, and live tracking across 29,000+ pincodes via Shiprocket. Bengaluru local deliveries route automatically with express dispatch.
+            Official Delhivery direct API integration: Automated AWB generation, real-time rate calculation, Bangalore warehouse pickup scheduling, printable shipping labels, and live webhook tracking across 26,000+ PIN codes.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="block text-[11px] font-medium text-slate-600 mb-1">Shiprocket Account Email</label>
-              <input
-                type="email"
-                placeholder="shiprocket@vishnuhome.in"
-                className="w-full px-3.5 py-2 clay-inset text-brandText focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-slate-600 mb-1">Shiprocket Password / Token</label>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">Delhivery API Token</label>
               <input
                 type="password"
-                placeholder="••••••••••••••••"
+                placeholder={process.env.DELHIVERY_API_TOKEN ? '•••••••••••••••• (Configured via env)' : 'Enter Delhivery API Token'}
+                defaultValue={process.env.DELHIVERY_API_TOKEN || ''}
                 className="w-full px-3.5 py-2 clay-inset text-brandText font-mono focus:outline-none"
               />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Stored securely on server via <code className="font-mono text-brandRed">DELHIVERY_API_TOKEN</code>
+              </span>
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 mb-1">Registered Warehouse Client / Pickup Name</label>
+              <input
+                type="text"
+                defaultValue={process.env.DELHIVERY_CLIENT_NAME || 'Vishnu Home Products Bangalore'}
+                className="w-full px-3.5 py-2 clay-inset text-brandText font-mono focus:outline-none"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Origin: Bangalore Hub, Indiranagar (PIN: 560038)
+              </span>
             </div>
           </div>
         </div>

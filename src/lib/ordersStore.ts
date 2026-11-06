@@ -493,6 +493,30 @@ export async function archiveOrderInStore(id: string): Promise<boolean> {
 
 export const getAllOrdersFromStore = getAllAdminOrders;
 
+export async function getOrderByIdFromStore(id: string): Promise<AdminOrder | null> {
+  const currentOrders = await getAllAdminOrders();
+  const clean = id.trim().toLowerCase();
+  const match = currentOrders.find(
+    (o) =>
+      o.id.toLowerCase() === clean ||
+      o.order_number.toLowerCase() === clean ||
+      (o.tracking_awb && o.tracking_awb.toLowerCase() === clean) ||
+      (o.delhivery_details?.waybill && o.delhivery_details.waybill.toLowerCase() === clean)
+  );
+  return match || null;
+}
+
+export async function updateOrderStatusInStore(
+  id: string,
+  status: any,
+  metadata?: Partial<AdminOrder>
+): Promise<AdminOrder | null> {
+  return updateOrderInStore(id, {
+    status,
+    ...(metadata || {}),
+  });
+}
+
 export async function getAbandonedCarts(): Promise<AbandonedCart[]> {
   if (!global.__vishnu_in_flight_carts) {
     global.__vishnu_in_flight_carts = [...INITIAL_IN_FLIGHT_CARTS];

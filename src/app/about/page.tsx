@@ -39,10 +39,10 @@ export default function AboutPage() {
             Verified Indian Food Business • FSSAI Lic: 21223181000014
           </div>
           <h1 className="font-display text-3xl sm:text-4xl font-bold leading-tight">
-            Authentic Coastal Flavours Crafted in <span className="text-amber-400">Mangalore</span>
+            Authentic Coastal Flavours Crafted from <span className="text-amber-400">Mangalore Heritage</span>
           </h1>
           <p className="text-sm sm:text-base text-white/80 mt-3 max-w-2xl leading-relaxed">
-            Vishnu Home Products is a traditional family-run coastal kitchen based in Kadri, Mangaluru, Karnataka. Every jar of our thokku, raw mango pickle, Kundapura masala, and sun-cured dry fish is slow-cooked in small home batches using 100% pure wood-pressed gingelly and coconut oils—with zero synthetic preservatives.
+            Vishnu Home Products brings traditional Mangalorean coastal heritage to your table. Every jar of our thokku, raw mango pickle, Kundapura masala, and sun-cured dry fish is crafted following time-honored home recipes from Dakshina Kannada, and prepared, packaged, and dispatched nationwide from our central operations and fulfillment hub in Bangalore, Karnataka.
           </p>
         </div>
 
@@ -110,11 +110,11 @@ export default function AboutPage() {
 
             <div className="p-4 rounded-xl bg-brandBg border border-brandBorder space-y-1">
               <div className="text-brandText3 font-semibold uppercase tracking-wider text-[10px]">
-                Physical Kitchen & Dispatch Address
+                Business Location & Dispatch Warehouse
               </div>
               <div className="font-semibold text-brandText flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-brandAccent shrink-0 mt-0.5" />
-                <span>Kadri Temple Road, Mangaluru, Dakshina Kannada, Karnataka - 575002, India</span>
+                <span>Indiranagar, Bangalore, Karnataka - 560038, India (Exclusive Shipping Partner: Delhivery Express)</span>
               </div>
             </div>
 

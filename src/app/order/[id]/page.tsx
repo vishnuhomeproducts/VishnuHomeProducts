@@ -73,7 +73,7 @@ export default function OrderConfirmationPage() {
 
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/10 border border-amber-300/30 text-amber-300 text-[11px] font-bold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Order Confirmed · Mangalore Kitchen Notified</span>
+            <span>Order Confirmed · Bangalore Dispatch Hub</span>
           </div>
 
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-white">
@@ -81,7 +81,7 @@ export default function OrderConfirmationPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-white/80 max-w-lg mx-auto leading-relaxed">
-            Your order <strong className="text-amber-300 font-mono">#{orderId}</strong> has been received by our Mangalore home kitchen and is being freshly prepared &amp; vacuum-sealed for dispatch.
+            Your order <strong className="text-amber-300 font-mono">#{orderId}</strong> has been received at our Bangalore central fulfillment hub and is being freshly prepared &amp; vacuum-sealed for Delhivery dispatch.
           </p>
 
           {/* Quick Action Pills */}
@@ -227,7 +227,7 @@ export default function OrderConfirmationPage() {
                 <span className="text-brandRed font-price text-lg">{formatINR(order.total)}</span>
               </div>
               <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-brandText3 border-t border-dashed border-brandBorder">
-                <span>Seller: Vishnu Home Products, Kadri, Mangaluru - 575002</span>
+                <span>Seller: Vishnu Home Products, Indiranagar, Bangalore - 560038 • Origin: Mangalore Food Heritage</span>
                 <span>FSSAI Lic: 21223181000014 • GST 5% Food Slab</span>
               </div>
             </div>
