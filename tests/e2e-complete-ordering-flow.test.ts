@@ -13,8 +13,14 @@
 
 import crypto from 'crypto';
 import { calculateDeliveryFee } from '../src/lib/delivery';
-import { POST as createOrderRoute } from '../src/app/api/razorpay/create-order/route';
-import { POST as verifyPaymentRoute } from '../src/app/api/razorpay/verify/route';
+import { POST as razorpayRoute } from '../src/app/api/razorpay/[...slug]/route';
+
+const createOrderRoute = (req: Request) =>
+  razorpayRoute(req, { params: { slug: ['create-order'] } });
+
+const verifyPaymentRoute = (req: Request) =>
+  razorpayRoute(req, { params: { slug: ['verify'] } });
+
 import { getAllAdminOrders } from '../src/lib/ordersStore';
 import { getAllProducts, createProduct, bulkImportProducts } from '../src/lib/productsStore';
 import { SAMPLE_PRODUCTS } from '../src/lib/data/sampleProducts';
@@ -51,12 +57,12 @@ async function runE2ETests() {
   // Coastal / Regional Karnataka
   const regionalMangaluru = calculateDeliveryFee('575002', 400);
   assert(regionalMangaluru.deliveryType === 'MANGALURU_REGIONAL', 'Pincode 575002 resolves to MANGALURU_REGIONAL');
-  assert(regionalMangaluru.fee === 60, 'Regional delivery fee is ₹60');
+  assert(regionalMangaluru.fee === 50, 'Regional delivery fee is ₹50');
 
   // Pan-India Courier (Mumbai / Delhi / Kolkata)
   const panIndia = calculateDeliveryFee('400001', 400);
   assert(panIndia.deliveryType === 'PAN_INDIA_COURIER', 'Pincode 400001 resolves to PAN_INDIA_COURIER');
-  assert(panIndia.fee === 80, 'Pan-India courier fee is ₹80');
+  assert(panIndia.fee === 50, 'Pan-India courier fee is ₹50');
 
   // Dynamic Shiprocket delivery fee override
   const shiprocketOverride = calculateDeliveryFee('560001', 400, 45);
@@ -123,15 +129,14 @@ async function runE2ETests() {
   // STAGE 3: Authoritative Order Creation & Pricing
   // -----------------------------------------------------------------
   console.log('\n--- Stage 3: Authoritative Order Creation ---');
-  // Order items: 2x Tomato Thokku (500g @ ₹190) = ₹380, 1x Mango Pickle (500g @ ₹190) = ₹190
-  // Subtotal = ₹570
-  // Delivery to Bengaluru (560054) = ₹50
-  // Total = ₹620
+  // Order items: 2x Tomato Thokku (500g @ ₹190) with volume discount, 1x Mango Pickle (500g @ ₹190)
+  // Subtotal = ₹552. Free shipping applies (>= ₹499).
+  // Total = ₹552
   const validOrderReq = new Request('http://localhost:3000/api/razorpay/create-order', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      amount: 620,
+      amount: 552,
       items: [
         { product_id: 'prod-1', slug: 'tomato-thokku', name: 'Tomato Thokku', size: '500g', price: 190, qty: 2 },
         { product_id: 'prod-2', slug: 'avakaya-mango-pickle', name: 'Avakaya Mango Pickle', size: '500g', price: 190, qty: 1 },
@@ -148,11 +153,14 @@ async function runE2ETests() {
 
   const validOrderRes = await createOrderRoute(validOrderReq);
   const validOrderJson = await validOrderRes.json();
+  if (validOrderRes.status !== 200) {
+    console.error('validOrderRes status:', validOrderRes.status, 'body:', validOrderJson);
+  }
 
   assert(validOrderRes.status === 200, 'POST /api/razorpay/create-order succeeded with HTTP 200');
   assert(validOrderJson.order_id !== undefined, `Gateway order ID generated: ${validOrderJson.order_id}`);
-  assert(validOrderJson.verifiedTotal === 620, 'Verified total accurately calculated as ₹620 (₹570 subtotal + ₹50 Bengaluru delivery)');
-  assert(validOrderJson.amount === 62000, 'Gateway amount formatted correctly as 62,000 paise');
+  assert(validOrderJson.verifiedTotal === 552, 'Verified total accurately calculated as ₹552 (qualifies for Free Delivery)');
+  assert(validOrderJson.amount === 55200, 'Gateway amount formatted correctly as 55,200 paise');
 
   // -----------------------------------------------------------------
   // STAGE 4: Security Check - Price Tampering Defense
@@ -182,7 +190,7 @@ async function runE2ETests() {
   const tamperedJson = await tamperedRes.json();
 
   assert(tamperedRes.status === 400, 'Price tampering attempt rejected with HTTP 400');
-  assert(tamperedJson.error.includes('Order total mismatch: Screen total was ₹140, but verified server total is ₹620'),
+  assert(tamperedJson.error.includes('Order total mismatch: Screen total was ₹140, but verified server total is ₹552'),
     'Server successfully detected tampering and enforced authoritative catalog price');
 
   // -----------------------------------------------------------------

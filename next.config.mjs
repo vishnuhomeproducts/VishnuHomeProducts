@@ -82,6 +82,30 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/shipping/delhivery',
+        destination: '/api/delhivery/shipping',
+      },
+      {
+        source: '/api/coupons/validate',
+        destination: '/api/store/coupons-validate',
+      },
+      {
+        source: '/api/queries',
+        destination: '/api/store/queries',
+      },
+      {
+        source: '/api/reviews',
+        destination: '/api/store/reviews',
+      },
+      {
+        source: '/api/settings',
+        destination: '/api/store/settings',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
