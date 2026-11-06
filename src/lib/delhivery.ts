@@ -52,20 +52,22 @@ export interface DelhiveryPickupRequestResult {
   message: string;
 }
 
-// Default Bangalore Dispatch Warehouse Hub
+// Registered Delhivery Domestic Pickup Facility & Dispatch Warehouse
 export const BANGALORE_WAREHOUSE_CONFIG = {
-  name: 'VISHNU_BANGALORE_CENTRAL_HUB',
+  name: 'VISHNU HOME PRODUCTS B2C',
   company: 'Vishnu Home Products',
-  phone: '+91 98450 12345',
-  email: 'shipping@vishnuhomeproducts.in',
-  address: 'Indiranagar Main Warehouse, 100 Feet Road',
+  contactPerson: 'Vishnu Home Products',
+  phone: '8310229876',
+  email: 'vishnuhomeproduct@gmail.com',
+  address: '347, 8th Main Road, Phase 2 Gokula Stage 1 , Bangalore, Karnataka ,India 560054',
   city: 'Bangalore',
   state: 'Karnataka',
-  pincode: '560038',
+  pincode: '560054',
   country: 'India',
 };
 
-const DELHIVERY_API_TOKEN = process.env.DELHIVERY_API_TOKEN || '';
+const DELHIVERY_API_TOKEN =
+  process.env.DELHIVERY_API_TOKEN || '6adf37dcb42642df318efad212bee8d488845a37';
 const DELHIVERY_ENVIRONMENT = process.env.DELHIVERY_ENVIRONMENT || 'production';
 
 const DELHIVERY_BASE_URL =
@@ -453,17 +455,17 @@ export async function trackDelhiveryShipment(waybill: string): Promise<any> {
     status: 'In Transit',
     status_type: 'IT',
     courier: 'Delhivery',
-    origin: 'Bangalore Warehouse (560038)',
+    origin: 'Bangalore Warehouse (560054)',
     scans: [
       {
         scan_datetime: new Date().toISOString(),
-        scan_location: 'Bangalore Central Fulfillment Center (560038)',
+        scan_location: 'Bangalore Central Fulfillment Center (560054)',
         status: 'Package Received & Sorted for Regional Dispatch',
         status_type: 'In Transit',
       },
       {
         scan_datetime: new Date(Date.now() - 3600000 * 4).toISOString(),
-        scan_location: 'Indiranagar Hub, Bangalore',
+        scan_location: 'Gokula Stage 1 Hub, Bangalore',
         status: 'Courier Pickup Completed by Delhivery Executive',
         status_type: 'Picked Up',
       },

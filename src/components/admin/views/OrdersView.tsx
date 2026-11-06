@@ -37,7 +37,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
   // Main Tabs: Active Orders, Pending Verification, Recycle Bin
   const [activeMainTab, setActiveMainTab] = useState<'active' | 'pending' | 'archived'>('active');
   // Delivery Sub-filters: All, Local, Pan-India Courier
-  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'bangalore_local' | 'pan_india_courier'>('all');
+  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'mangaluru_local' | 'pan_india_courier'>('all');
   // Selected order IDs for bulk operations
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   // Tracking edit popover state
@@ -61,9 +61,6 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
   // Delivery Sub-filtering
   const displayedOrders = filteredByTab.filter((o) => {
     if (deliveryFilter === 'all') return true;
-    if (deliveryFilter === 'bangalore_local') {
-      return o.delivery_type === 'bangalore_local' || (o.delivery_type as string) === 'mangaluru_local';
-    }
     return o.delivery_type === deliveryFilter;
   });
 
@@ -71,9 +68,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
   const pendingCount = orders.filter((o) => !o.is_archived && (o.payment_status === 'unpaid' || o.payment_status === 'pending_verification')).length;
   const archivedCount = orders.filter((o) => o.is_archived).length;
 
-  const localCount = filteredByTab.filter(
-    (o) => o.delivery_type === 'bangalore_local' || (o.delivery_type as string) === 'mangaluru_local'
-  ).length;
+  const localCount = filteredByTab.filter((o) => o.delivery_type === 'mangaluru_local').length;
   const courierCount = filteredByTab.filter((o) => o.delivery_type === 'pan_india_courier').length;
 
   const handleSelectAll = (checked: boolean) => {
@@ -179,15 +174,15 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
         </button>
 
         <button
-          onClick={() => setDeliveryFilter('bangalore_local')}
+          onClick={() => setDeliveryFilter('mangaluru_local')}
           className={`text-xs px-4 py-1.5 transition-all flex items-center gap-1.5 ${
-            deliveryFilter === 'bangalore_local' ? 'clay-pill-active font-bold' : 'clay-pill-inactive font-medium'
+            deliveryFilter === 'mangaluru_local' ? 'clay-pill-active font-bold' : 'clay-pill-inactive font-medium'
           }`}
         >
-          <span>🛵 Bangalore Local</span>
+          <span>🛵 Mangaluru Local</span>
           <span
             className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-              deliveryFilter === 'bangalore_local' ? 'bg-white text-brandRed font-bold' : 'bg-slate-200 text-slate-700'
+              deliveryFilter === 'mangaluru_local' ? 'bg-white text-brandRed font-bold' : 'bg-slate-200 text-slate-700'
             }`}
           >
             {localCount}
@@ -302,7 +297,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
 
                     {/* Delivery type pill */}
                     <div className="px-3 py-1 rounded-full text-[11px] font-semibold clay-card-flat flex items-center gap-1 text-brandText">
-                      <span>{order.delivery_type === 'bangalore_local' || (order.delivery_type as string) === 'mangaluru_local' ? '🛵 Bangalore Local' : '🇮🇳 Pan-India Courier (Delhivery)'}</span>
+                      <span>{order.delivery_type === 'mangaluru_local' ? '🛵 Mangaluru Local' : '🇮🇳 Pan-India Courier'}</span>
                     </div>
 
                     {/* Expected delivery target */}
@@ -565,8 +560,11 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                       onChange={(e) => setCourierInput(e.target.value)}
                       className="px-3 py-2 bg-white/80 border-none rounded-xl text-xs focus:outline-none"
                     >
-                      <option value="Delhivery Express">Delhivery Express (Bangalore Hub)</option>
                       <option value="Delhivery Surface">Delhivery Surface</option>
+                      <option value="Blue Dart Air">Blue Dart Air</option>
+                      <option value="India Post Speed Post">India Post Speed Post</option>
+                      <option value="DTDC Courier">DTDC Courier</option>
+                      <option value="Mangaluru Local Express (Porter/Dunzo)">Mangaluru Local Express (Porter)</option>
                     </select>
 
                     <input

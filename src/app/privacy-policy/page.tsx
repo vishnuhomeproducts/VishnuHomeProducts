@@ -52,7 +52,7 @@ export default function PrivacyPolicyPage() {
             <section className="space-y-1.5">
               <h2 className="font-bold text-base text-brandText">3. How We Use Your Information</h2>
               <ul className="list-disc pl-5 space-y-1">
-                <li>To pack, ship, and deliver your order via our exclusive logistics partner Delhivery Express.</li>
+                <li>To pack, ship, and deliver your order via our courier partners (Delhivery, DTDC, BlueDart, India Post).</li>
                 <li>To send order confirmation, invoice, and live AWB tracking updates via Email/SMS/WhatsApp.</li>
                 <li>To provide customer support, replacements, or refunds.</li>
                 <li>We <strong>never sell or rent</strong> your personal information to third-party telemarketers.</li>
@@ -73,7 +73,7 @@ export default function PrivacyPolicyPage() {
                 <br />
                 <strong>Vishnu Home Products — Privacy & Grievance Desk</strong>
                 <br />
-                Address: Indiranagar, Bangalore, Karnataka – 560038, India
+                Address: Kadri Temple Road, Mangaluru, Karnataka – 575002, India
                 <br />
                 Phone: <a href="tel:+919845012345" className="text-brandAccent font-semibold">+91 98450 12345</a> • Email:{' '}
                 <a href="mailto:support@vishnuhomeproducts.in" className="text-brandAccent font-semibold">

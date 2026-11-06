@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CheckoutFormData } from '@/lib/schemas/checkout';
 import { Input } from '@/components/ui/Input';
-import { Truck, MapPin, CreditCard, Banknote, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Truck, MapPin, CreditCard, Banknote } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 
 interface AddressFormProps {
@@ -22,87 +22,33 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
   const { codEnabled } = useCart();
   const selectedPaymentMethod = watch('paymentMethod');
   const isGift = watch('isGift');
-  const enteredPincode = watch('pincode');
-
-  const [delhiveryStatus, setDelhiveryStatus] = useState<{
-    loading: boolean;
-    serviceable: boolean;
-    message: string;
-    zone?: string;
-    expectedDate?: string;
-  } | null>(null);
-
-  // Debounced Delhivery PIN code serviceability check
-  useEffect(() => {
-    const cleanPin = (enteredPincode || '').replace(/\D/g, '').slice(0, 6);
-    if (cleanPin.length !== 6) {
-      setDelhiveryStatus(null);
-      return;
-    }
-
-    setDelhiveryStatus({
-      loading: true,
-      serviceable: false,
-      message: 'Checking Delhivery serviceability from Bangalore Hub...',
-    });
-
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/shipping/delhivery?pincode=${cleanPin}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.service) {
-            setDelhiveryStatus({
-              loading: false,
-              serviceable: data.service.serviceable,
-              message: data.service.message,
-              zone: data.service.zone,
-              expectedDate: data.service.expected_delivery_date,
-            });
-
-            // Auto-fill City & State if available and currently blank
-            if (data.service.city && !form.getValues('city')) {
-              setValue('city', data.service.city, { shouldValidate: true });
-            }
-            if (data.service.state && !form.getValues('state')) {
-              setValue('state', data.service.state, { shouldValidate: true });
-            }
-          }
-        }
-      } catch (e) {
-        setDelhiveryStatus(null);
-      }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [enteredPincode, form, setValue]);
 
   const quickAddresses = [
     {
-      label: '🏢 Bangalore Central Hub',
+      label: '🏠 Home (Mangaluru)',
       name: 'Pooja Hegde',
       phone: '9845012345',
-      email: 'pooja.hegde@gmail.com',
-      line1: '100 Feet Road, Indiranagar Stage 2',
-      line2: 'Near Metro Station',
-      city: 'Bangalore',
-      state: 'Karnataka',
-      pincode: '560038',
-    },
-    {
-      label: '🏠 Coastal Delivery (Mangalore)',
-      name: 'Pooja Hegde',
-      phone: '9845012345',
-      email: 'pooja.hegde@gmail.com',
+      email: 'pooja@example.com',
       line1: 'Flat 302, Sagar View Apts, Kadri Temple Road',
-      line2: 'Near Mallikatte Circle',
+      line2: 'Near Kadri Park',
       city: 'Mangaluru',
       state: 'Karnataka',
       pincode: '575002',
     },
+    {
+      label: '🏢 Bangalore Dispatch Hub',
+      name: 'Vishnu Home Products',
+      phone: '8310229876',
+      email: 'vishnuhomeproduct@gmail.com',
+      line1: '347, 8th Main Road, Phase 2 Gokula Stage 1',
+      line2: 'Bangalore',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      pincode: '560054',
+    },
   ];
 
-  const handleSelectQuickAddress = (addr: (typeof quickAddresses)[0]) => {
+  const handleSelectQuickAddress = (addr: typeof quickAddresses[0]) => {
     setValue('name', addr.name, { shouldValidate: true });
     setValue('phone', addr.phone, { shouldValidate: true });
     setValue('email', addr.email, { shouldValidate: true });
@@ -115,11 +61,11 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
 
   return (
     <div className="space-y-8">
-      {/* 1-Tap Saved Address Quick Fill */}
+      {/* Saved Address 1-Tap Selector */}
       <div className="bg-amber-50/70 p-4 rounded-card border border-amber-200/80 space-y-2.5">
         <div className="text-xs font-bold text-brandText flex items-center justify-between">
           <span>⚡ 1-Tap Saved Address Fill</span>
-          <span className="text-[10px] text-brandAccent font-semibold">Bangalore Dispatch Hub</span>
+          <span className="text-[10px] text-brandAccent font-semibold">Express Checkout</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {quickAddresses.map((addr, i) => (
@@ -134,8 +80,8 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
           ))}
         </div>
       </div>
-
-      {/* Section 1: Customer Contact Details */}
+      
+      {/* Section 1: Contact Information */}
       <div className="bg-white p-6 rounded-card border border-brandBorder shadow-sm space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-brandBorder font-bold text-sm text-brandText">
           <Truck className="w-4 h-4 text-brandAccent" />
@@ -166,7 +112,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
 
           <div>
             <Input
-              label="Email Address (for order tracking & Delhivery receipt)"
+              label="Email Address (for order tracking & receipt)"
               type="email"
               placeholder="e.g. pooja@example.com"
               required
@@ -177,16 +123,11 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
         </div>
       </div>
 
-      {/* Section 2: Delivery Address & Exclusive Delhivery Live Serviceability */}
+      {/* Section 2: Delivery Address */}
       <div className="bg-white p-6 rounded-card border border-brandBorder shadow-sm space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-brandBorder font-bold text-sm text-brandText">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-brandAccent" />
-            <span>2. Shipping Address &amp; Delhivery Logistics</span>
-          </div>
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">
-            🚚 Exclusive Partner: Delhivery
-          </span>
+        <div className="flex items-center gap-2 pb-3 border-b border-brandBorder font-bold text-sm text-brandText">
+          <MapPin className="w-4 h-4 text-brandAccent" />
+          <span>2. Shipping Address</span>
         </div>
 
         <div className="space-y-4">
@@ -200,7 +141,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
 
           <Input
             label="Landmark / Locality (Optional)"
-            placeholder="e.g. Near Metro Station / Landmark"
+            placeholder="e.g. Near Kadri Temple"
             {...register('line2')}
             error={errors.line2?.message}
           />
@@ -209,7 +150,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
             <div>
               <Input
                 label="City / Town"
-                placeholder="e.g. Bangalore"
+                placeholder="e.g. Mangaluru"
                 required
                 {...register('city')}
                 error={errors.city?.message}
@@ -229,7 +170,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
             <div>
               <Input
                 label="PIN Code (6 digits)"
-                placeholder="e.g. 560038"
+                placeholder="e.g. 575002"
                 maxLength={6}
                 required
                 {...register('pincode')}
@@ -237,36 +178,6 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
               />
             </div>
           </div>
-
-          {/* Delhivery Live Serviceability Badge */}
-          {delhiveryStatus && (
-            <div
-              className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 transition-all ${
-                delhiveryStatus.loading
-                  ? 'bg-slate-50 border-slate-200 text-slate-600'
-                  : delhiveryStatus.serviceable
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-950 font-medium'
-                  : 'bg-red-50 border-red-200 text-brandRed'
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                {delhiveryStatus.loading ? (
-                  <span className="w-3.5 h-3.5 border-2 border-brandRed border-t-transparent rounded-full animate-spin shrink-0" />
-                ) : delhiveryStatus.serviceable ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-brandRed shrink-0" />
-                )}
-                <span className="truncate">{delhiveryStatus.message}</span>
-              </div>
-
-              {delhiveryStatus.expectedDate && (
-                <span className="text-[11px] font-bold text-emerald-800 shrink-0 bg-white/80 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Est: {delhiveryStatus.expectedDate}
-                </span>
-              )}
-            </div>
-          )}
 
           {/* Festive Gift Note & Custom Greeting Card Toggle */}
           <div className="pt-2 border-t border-brandBorder space-y-2.5">
@@ -276,7 +187,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
                 {...register('isGift')}
                 className="w-4 h-4 rounded text-brandRed accent-brandRed"
               />
-              <span>🎀 Sending this as a Gift? Add a FREE Personalized Mangalore Heritage Greeting Card</span>
+              <span>🎀 Sending this as a Gift? Add a FREE Personalized Mangalore Greeting Card</span>
             </label>
 
             {isGift && (
@@ -287,7 +198,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
                 <textarea
                   rows={2}
                   maxLength={240}
-                  placeholder="e.g. Sending you authentic Mangalore homemade treats with lots of love from Bangalore!"
+                  placeholder="e.g. Dear Amma & Appa, sending you fresh homemade flavours from Mangalore with lots of love!"
                   {...register('giftMessage')}
                   className="w-full px-3 py-2 text-xs bg-white border border-brandBorder rounded-button focus:outline-none focus:border-brandAccent"
                 />
@@ -348,10 +259,10 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
               <div>
                 <div className="flex items-center gap-1.5 font-bold text-xs text-brandText">
                   <Banknote className="w-3.5 h-3.5 text-brandAccent" />
-                  <span>Cash on Delivery (Delhivery COD)</span>
+                  <span>Cash on Delivery (COD)</span>
                 </div>
                 <p className="text-[11px] text-brandText2 mt-1">
-                  Pay cash or UPI QR at your doorstep to the Delhivery executive.
+                  Pay in cash or UPI QR at your doorstep upon delivery.
                 </p>
               </div>
             </label>
@@ -363,6 +274,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
           )}
         </div>
       </div>
+
     </div>
   );
 };

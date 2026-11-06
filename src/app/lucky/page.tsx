@@ -480,7 +480,6 @@ function LuckyDashboardContent() {
             <ShipmentsView
               orders={orders}
               onPrintInvoice={(order) => setSelectedInvoiceOrder(order)}
-              onRefresh={fetchData}
             />
           )}
 

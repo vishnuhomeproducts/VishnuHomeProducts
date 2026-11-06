@@ -55,13 +55,13 @@ export default function ContactAndPoliciesPage() {
           <div className="lg:col-span-5 bg-brandDark text-white p-8 rounded-2xl space-y-6 shadow-lg">
             <div className="space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-widest text-brandAccent-mid">
-                Bangalore Central Dispatch Hub • Mangalore Food Heritage
+                Mangaluru Kitchen & Dispatch Hub
               </span>
               <h1 className="font-display text-2xl sm:text-3xl font-bold">
                 We’d Love to Hear From You
               </h1>
               <p className="text-xs text-white/70 leading-relaxed">
-                Have a question about our traditional Mangalore snack batches, custom wedding/bulk orders, or Delhivery live tracking? Reach out directly.
+                Have a question about our small-batch pickles, custom wedding/bulk orders, or courier tracking? Reach out directly.
               </p>
             </div>
 
@@ -69,9 +69,9 @@ export default function ContactAndPoliciesPage() {
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-brandAccent shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-bold text-white">Central Operations & Dispatch Address</div>
+                  <div className="font-bold text-white">Kitchen & Store Address</div>
                   <div className="text-white/70">
-                    Indiranagar, Bangalore, Karnataka - 560038
+                    Kadri Temple Road, Kadri, Mangaluru, Karnataka - 575002
                   </div>
                 </div>
               </div>
@@ -126,7 +126,7 @@ export default function ContactAndPoliciesPage() {
               <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2 font-medium">
                 <CheckCircle2 className="w-5 h-5 text-brandGreen shrink-0" />
                 <span>
-                  Thank you! Your inquiry has been received by our Bangalore fulfillment team. We will reply shortly via WhatsApp/Phone.
+                  Thank you! Your inquiry has been received by our Mangaluru team. We will reply shortly via WhatsApp/Phone.
                 </span>
               </div>
             )}
@@ -219,7 +219,7 @@ export default function ContactAndPoliciesPage() {
               Shipping & Delivery Policy
             </h3>
             <p className="text-brandText2 leading-relaxed">
-              Authentic Mangalorean snacks freshly packed and dispatched exclusively from our Bangalore hub via <strong>Delhivery Express</strong>. Bangalore local deliveries arrive within <strong>24–48 hours</strong>; South India within <strong>2–3 business days</strong>; Pan-India in <strong>3–5 business days</strong>. Free shipping on all orders above ₹499.
+              Orders are freshly packed within 24 hours from Mangaluru. Local Mangaluru & Udupi deliveries arrive within <strong>24–48 hours</strong>; Bengaluru within <strong>1–2 business days</strong>; Pan-India orders arrive in <strong>3–5 business days</strong> via BlueDart, Delhivery, or DTDC. Free shipping on all orders above ₹999.
             </p>
           </div>
 

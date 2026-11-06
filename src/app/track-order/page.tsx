@@ -16,12 +16,11 @@ import {
 import { formatINR } from '@/lib/utils';
 
 const STATUS_STEPS = [
-  { key: 'confirmed', label: 'Order Confirmed', desc: 'Bangalore Hub' },
-  { key: 'packed', label: 'Packed & Labeled', desc: 'Delhivery AWB Generated' },
-  { key: 'picked_up', label: 'Delhivery Picked Up', desc: 'Departed BLR Hub' },
-  { key: 'in_transit', label: 'In Transit', desc: 'Delhivery Network' },
-  { key: 'out_for_delivery', label: 'Out for Delivery', desc: 'Destination Courier' },
-  { key: 'delivered', label: 'Delivered', desc: 'Delivered to Doorstep' },
+  { key: 'confirmed', label: 'Order Confirmed', desc: 'Kitchen notified' },
+  { key: 'packed', label: 'Freshly Packed', desc: 'Vacuum sealed' },
+  { key: 'shipped', label: 'Dispatched', desc: 'Handed to courier' },
+  { key: 'out_for_delivery', label: 'Out for Delivery', desc: 'In your city' },
+  { key: 'delivered', label: 'Delivered', desc: 'Enjoy your meal!' },
 ];
 
 function getStepIndex(status: string): number {
@@ -31,18 +30,13 @@ function getStepIndex(status: string): number {
     case 'processing':
       return 0;
     case 'packed':
-    case 'ready_for_dispatch':
       return 1;
-    case 'pickup_scheduled':
-    case 'picked_up':
     case 'shipped':
       return 2;
-    case 'in_transit':
-      return 3;
     case 'out_for_delivery':
-      return 4;
+      return 3;
     case 'delivered':
-      return 5;
+      return 4;
     default:
       return 0;
   }
@@ -94,13 +88,13 @@ export default function TrackOrderPage() {
         <div className="max-w-3xl mx-auto text-center space-y-3 relative z-10">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/10 border border-amber-300/30 text-amber-300 text-[11px] font-bold uppercase tracking-wider">
             <Truck className="w-3.5 h-3.5" />
-            <span>Delhivery Express Live Tracking</span>
+            <span>Real-Time Courier &amp; Kitchen Radar</span>
           </span>
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-white">
-            Track Your Authentic Mangalorean Snacks Parcel
+            Track Your Mangalore Parcel
           </h1>
           <p className="text-xs sm:text-sm text-white/75 max-w-lg mx-auto">
-            Dispatched from our Bangalore fulfillment hub exclusively via Delhivery Express. Enter your Order ID, Delhivery AWB, or mobile number.
+            Enter your Order ID or mobile number below to see live kitchen packing status, courier partner, and AWB tracking link.
           </p>
         </div>
       </div>
@@ -114,13 +108,13 @@ export default function TrackOrderPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
               <label className="block font-bold text-brandText mb-1.5">
-                Order ID / Delhivery AWB
+                Order ID / Number
               </label>
               <input
                 type="text"
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
-                placeholder="e.g. VHP-90412 or 12847921001"
+                placeholder="e.g. VHP-90412"
                 className="w-full px-4 py-3 bg-brandBg border border-brandBorder rounded-button font-mono uppercase text-brandText focus:outline-none focus:border-brandRed focus:bg-white transition-all"
               />
             </div>
@@ -169,16 +163,13 @@ export default function TrackOrderPage() {
             className="w-full py-3.5 bg-gradient-to-r from-brandRed to-brandAccent-dark hover:from-red-600 hover:to-brandRed text-white font-bold text-xs sm:text-sm rounded-button shadow-lg inline-flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
             <Search className="w-4 h-4" />
-            <span>{isLoading ? 'Checking Delhivery Live Radar...' : 'Track with Delhivery Express'}</span>
+            <span>{isLoading ? 'Checking Live Status...' : 'Track Order Status'}</span>
           </button>
         </form>
 
         {/* Results */}
         {orders.map((order) => {
           const activeStep = getStepIndex(order.status);
-          const waybill =
-            order.delhivery_details?.waybill || order.tracking_awb || order.tracking_number;
-          const scans = order.delhivery_tracking?.scans || [];
 
           return (
             <div
@@ -202,44 +193,40 @@ export default function TrackOrderPage() {
                       month: 'short',
                       year: 'numeric',
                     })}{' '}
-                    • Origin: <span className="font-semibold text-brandText">Bangalore Hub (560038)</span> • Total Value:{' '}
-                    <strong className="text-brandText font-price">{formatINR(order.total)}</strong>
+                    • Total Value: <strong className="text-brandText font-price">{formatINR(order.total)}</strong>
                   </div>
                 </div>
 
-                {waybill ? (
-                  <div className="p-3 rounded-xl bg-amber-50/60 border border-amber-200 text-xs flex items-center justify-between gap-4">
+                {order.tracking_awb ? (
+                  <div className="p-3 rounded-xl bg-brandAccent-light border border-red-200 text-xs flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-[10px] text-amber-900 uppercase font-bold flex items-center gap-1">
-                        <Truck className="w-3 h-3 text-brandRed" />
-                        <span>Delhivery Express AWB</span>
+                      <div className="text-[10px] text-brandRed uppercase font-bold">
+                        {order.courier_partner || 'Express Courier'} AWB:
                       </div>
-                      <div className="font-mono font-extrabold text-brandText text-sm">{waybill}</div>
+                      <div className="font-mono font-extrabold text-brandText">{order.tracking_awb}</div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <a
-                        href={`https://www.delhivery.com/track/package/${waybill}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3 py-1.5 rounded-lg bg-brandRed text-white hover:bg-brandAccent-dark text-[11px] font-bold inline-flex items-center gap-1 transition-colors"
-                        title="Live Tracking on Delhivery"
-                      >
-                        <span>Delhivery Portal</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(
+                        `${order.courier_partner || 'Courier'} tracking ${order.tracking_awb}`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2 rounded-lg bg-brandRed text-white hover:bg-brandAccent-dark"
+                      title="Track on Courier Website"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                   </div>
                 ) : (
-                  <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] font-semibold text-amber-900 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-                    <span>Packing fresh authentic Mangalore snacks at Bangalore kitchen</span>
+                  <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] font-semibold text-amber-900">
+                    🥣 Being freshly packed in our Mangalore kitchen
                   </div>
                 )}
               </div>
 
-              {/* 6-Step Progress Timeline */}
+              {/* 5-Step Progress Timeline */}
               <div className="relative pt-2">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                <div className="grid grid-cols-5 gap-2">
                   {STATUS_STEPS.map((step, index) => {
                     const completed = index <= activeStep;
                     return (
@@ -266,28 +253,6 @@ export default function TrackOrderPage() {
                   })}
                 </div>
               </div>
-
-              {/* Live Delhivery Scan Milestones if available */}
-              {scans.length > 0 && (
-                <div className="p-4 rounded-xl bg-gray-50 border border-brandBorder space-y-3">
-                  <div className="text-xs font-bold text-brandText flex items-center gap-1.5">
-                    <Truck className="w-3.5 h-3.5 text-brandRed" />
-                    <span>Live Delhivery Transit Scans</span>
-                  </div>
-                  <div className="space-y-2 border-l-2 border-brandRed/30 pl-3">
-                    {scans.map((scan: any, sIdx: number) => (
-                      <div key={sIdx} className="text-xs text-brandText2">
-                        <div className="font-semibold text-brandText">
-                          {scan.status} - <span className="text-brandText3">{scan.location}</span>
-                        </div>
-                        <div className="text-[10px] text-brandText3 font-mono">
-                          {new Date(scan.time).toLocaleString('en-IN')} • {scan.details}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Items & Shipping Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-5 border-t border-brandBorder text-xs">
@@ -338,7 +303,7 @@ export default function TrackOrderPage() {
             <div>
               <div className="font-bold text-brandText">Need Direct Dispatch Support?</div>
               <div className="text-brandText2">
-                Our Bangalore fulfillment desk is available on WhatsApp from 9 AM to 8 PM IST.
+                Our Mangalore dispatch desk is available on WhatsApp from 9 AM to 8 PM IST.
               </div>
             </div>
           </div>

@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   const addressLine2 = order?.shipping_address?.line2 || '';
   const city = order?.shipping_address?.city || 'Bangalore';
   const state = order?.shipping_address?.state || 'Karnataka';
-  const pincode = order?.shipping_address?.pincode || '560038';
+  const pincode = order?.shipping_address?.pincode || '560054';
   const paymentMode = order?.payment_method === 'cod' ? `COD: ₹${order?.total || 0}` : 'PREPAID';
   const routingCode = `BLR/IND/${pincode.slice(0, 3)}`;
 

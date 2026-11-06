@@ -48,10 +48,10 @@ export default function RootLayout({
     priceRange: '₹120 - ₹999',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'Indiranagar, 100 Feet Road',
-      addressLocality: 'Bangalore',
+      streetAddress: 'Kadri Temple Road',
+      addressLocality: 'Mangaluru',
       addressRegion: 'Karnataka',
-      postalCode: '560038',
+      postalCode: '575002',
       addressCountry: 'IN',
     },
     contactPoint: {

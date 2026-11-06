@@ -139,7 +139,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5 text-xs text-white/70">
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-brandAccent shrink-0 mt-0.5" />
-                <span>Indiranagar, Bangalore, Karnataka - 560038</span>
+                <span>Kadri Temple Road, Mangaluru, Karnataka - 575002</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-brandAccent shrink-0" />
@@ -166,19 +166,19 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar: Copyright & Payment Badges */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50">
           <div>
-            © {new Date().getFullYear()} Vishnu Home Products. Authentic Mangalore Heritage Recipes • Dispatched from Bangalore.
+            © {new Date().getFullYear()} Vishnu Home Products. All rights reserved. Handcrafted with ❤️ in Mangalore.
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-white/40 mr-1">Logistics & Payments:</span>
-            <span className="px-2 py-1 rounded bg-red-600/20 text-red-300 font-bold text-[10px] tracking-wide border border-red-500/30">
-              Delhivery Express
-            </span>
+            <span className="text-[11px] text-white/40 mr-1">Secured by:</span>
             <span className="px-2 py-1 rounded bg-white/10 text-white font-medium text-[10px] tracking-wide border border-white/10">
               Razorpay
             </span>
             <span className="px-2 py-1 rounded bg-white/10 text-white font-medium text-[10px] tracking-wide border border-white/10">
               UPI / GPay
+            </span>
+            <span className="px-2 py-1 rounded bg-white/10 text-white font-medium text-[10px] tracking-wide border border-white/10">
+              Cards & NetBanking
             </span>
             <span className="px-2 py-1 rounded bg-white/10 text-white font-medium text-[10px] tracking-wide border border-white/10">
               COD Available

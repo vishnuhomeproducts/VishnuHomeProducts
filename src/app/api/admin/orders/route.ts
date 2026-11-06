@@ -27,7 +27,7 @@ export async function GET(req: Request) {
 
     // Delivery sub-filter
     if (delivery === 'local') {
-      orders = orders.filter(o => o.delivery_type === 'bangalore_local' || o.delivery_type === 'mangaluru_local');
+      orders = orders.filter(o => o.delivery_type === 'mangaluru_local');
     } else if (delivery === 'courier') {
       orders = orders.filter(o => o.delivery_type === 'pan_india_courier');
     }

@@ -174,55 +174,39 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleCheckPincode = async (e: React.FormEvent) => {
+  const handleCheckPincode = (e: React.FormEvent) => {
     e.preventDefault();
     const clean = pincode.trim();
     if (!/^\d{6}$/.test(clean)) {
       setPincodeResult({
         valid: false,
-        eta: 'Please enter a valid 6-digit Indian PIN code.',
+        eta: 'Please enter a valid 6-digit Indian pincode.',
         feeText: '',
         zone: '',
       });
       return;
     }
 
-    try {
-      const res = await fetch(`/api/shipping/delhivery?pincode=${clean}`);
-      const data = await res.json();
-      if (data.serviceable) {
-        setPincodeResult({
-          valid: true,
-          zone: `${data.zoneDescription || 'Delhivery Express Network'} (Dispatch: Bangalore 560038)`,
-          eta: data.expectedTat || '2–4 Business Days via Delhivery',
-          feeText: 'FREE shipping on orders above ₹499 • Delhivery COD & Online Payment Available',
-        });
-        return;
-      }
-    } catch {
-      // Fallback local logic below
-    }
-
-    if (clean.startsWith('560')) {
+    if (clean.startsWith('575') || clean.startsWith('576')) {
       setPincodeResult({
         valid: true,
-        zone: 'Bangalore Local Dispatch Zone',
-        eta: '1–2 Business Days via Delhivery Express',
-        feeText: '₹40 shipping (FREE on orders above ₹499) • Delhivery COD & UPI Available',
+        zone: 'Mangaluru / Coastal Express Zone',
+        eta: 'Same-Day / Next-Day Express Delivery',
+        feeText: '₹60 shipping (FREE on orders above ₹999) • COD & UPI Available',
       });
-    } else if (/^5[0-9]{5}$/.test(clean)) {
+    } else if (clean.startsWith('560')) {
       setPincodeResult({
         valid: true,
-        zone: 'South India Priority Zone',
-        eta: '2–3 Business Days via Delhivery Express',
-        feeText: '₹50 shipping (FREE on orders above ₹499) • Delhivery COD & UPI Available',
+        zone: 'Bengaluru Priority Zone',
+        eta: '1–2 Business Days Express Delivery',
+        feeText: '₹50 shipping (FREE on orders above ₹999) • COD & UPI Available',
       });
     } else {
       setPincodeResult({
         valid: true,
-        zone: 'Pan-India Delhivery Network',
-        eta: '3–5 Business Days via Delhivery',
-        feeText: '₹60 shipping (FREE on orders above ₹499) • Delhivery COD & Online Payment Available',
+        zone: 'Pan-India Serviceable Zone',
+        eta: '3–5 Business Days Air/Surface Courier',
+        feeText: '₹80 shipping (FREE on orders above ₹999) • COD & Online Payment Available',
       });
     }
   };

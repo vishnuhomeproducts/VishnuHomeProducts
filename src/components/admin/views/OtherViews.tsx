@@ -37,7 +37,7 @@ export const OtherViews: React.FC<OtherViewsProps> = ({ tab }) => {
 
   // Policies Editor State
   const [shippingPolicy, setShippingPolicy] = useState(
-    'Bangalore local orders are delivered within 24–48 hours. Pan-India orders are dispatched within 24 hours exclusively via Delhivery Express in leak-proof protective packaging.'
+    'Mangaluru local orders are delivered within 24 hours. Pan-India orders are dispatched within 24–48 hours via Delhivery, Blue Dart, or Speed Post in leak-proof vacuum-sealed packaging.'
   );
   const [refundPolicy, setRefundPolicy] = useState(
     '100% Damage-Free Replacement Guarantee: If any jar is damaged or leaked in transit, share an unboxing photo on WhatsApp within 24 hours of delivery for a free replacement or full refund.'
@@ -398,7 +398,7 @@ export const OtherViews: React.FC<OtherViewsProps> = ({ tab }) => {
                     onClick={() =>
                       handleSendCannedReply(
                         q,
-                        `Namaskara ${q.name}! 🙏 Regarding your delivery inquiry: Bangalore local orders arrive within 24–48 hours, and Pan-India parcels take 2–4 business days dispatched exclusively via Delhivery Express from our Bangalore warehouse.`
+                        `Namaskara ${q.name}! 🙏 Regarding your delivery inquiry: Mangaluru local orders are delivered within 24 hours, and Pan-India courier parcels take 2–4 business days via Delhivery/BlueDart.`
                       )
                     }
                     className="px-2.5 py-1 rounded-lg clay-card-flat text-[10px] font-semibold text-brandText hover:text-brandRed"
