@@ -43,7 +43,25 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (user?.email) {
+      if (!form.getValues('email')) form.setValue('email', user.email);
+      if (user.name && !form.getValues('name')) form.setValue('name', user.name);
+      if (user.phone && !form.getValues('phone')) form.setValue('phone', user.phone);
+
+      try {
+        const userAddrKey = `vishnu_addresses_${user.email.toLowerCase()}`;
+        const stored = JSON.parse(localStorage.getItem(userAddrKey) || '[]');
+        if (Array.isArray(stored) && stored.length > 0) {
+          const def = stored.find((a: any) => a.isDefault) || stored[0];
+          if (def) {
+            if (def.name && !form.getValues('name')) form.setValue('name', def.name);
+            if (def.phone && !form.getValues('phone')) form.setValue('phone', def.phone);
+            if (def.address && !form.getValues('line1')) form.setValue('line1', def.address);
+          }
+        }
+      } catch (e) {}
+    }
+  }, [user]);
 
   if (!mounted) {
     return (

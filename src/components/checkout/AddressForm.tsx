@@ -92,7 +92,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
           <div className="sm:col-span-2">
             <Input
               label="Full Name"
-              placeholder="e.g. Pooja Hegde"
+              placeholder="Enter your full name"
               required
               {...register('name')}
               error={errors.name?.message}
@@ -102,7 +102,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
           <div>
             <Input
               label="Mobile Number (10 Digits)"
-              placeholder="e.g. 9845012345"
+              placeholder="10-digit mobile number"
               required
               maxLength={10}
               {...register('phone')}
@@ -114,7 +114,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form }) => {
             <Input
               label="Email Address (for order tracking & receipt)"
               type="email"
-              placeholder="e.g. pooja@example.com"
+              placeholder="name@example.com"
               required
               {...register('email')}
               error={errors.email?.message}

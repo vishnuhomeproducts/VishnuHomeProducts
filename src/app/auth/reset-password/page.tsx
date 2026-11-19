@@ -57,9 +57,10 @@ export default function ResetPasswordPage() {
             <Input
               label="Email Address"
               type="email"
-              placeholder="pooja@example.com"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               required
             />
 

@@ -324,6 +324,34 @@ export async function getAllAdminOrders(): Promise<AdminOrder[]> {
   return loadPersistedOrders();
 }
 
+/**
+ * Returns orders strictly isolated to the specified customer email/userId.
+ * Admin seed/demo orders (Pooja, Arjun, etc.) are strictly excluded.
+ */
+export async function getOrdersForUser(email: string, userId?: string): Promise<AdminOrder[]> {
+  if (!email && !userId) return [];
+
+  const normalizedEmail = (email || '').trim().toLowerCase();
+  const allOrders = await getAllAdminOrders();
+
+  return allOrders.filter((o) => {
+    // 1. Exclude admin demo seed orders from customer views
+    if (INITIAL_DEMO_ORDERS.some((demo) => demo.id === o.id)) {
+      return false;
+    }
+    // 2. Match exact shipping email
+    const orderEmail = (o.shipping_email || o.shipping_address?.email || '').trim().toLowerCase();
+    if (normalizedEmail && orderEmail === normalizedEmail) {
+      return true;
+    }
+    // 3. Match user_id if present
+    if (userId && o.user_id && o.user_id === userId) {
+      return true;
+    }
+    return false;
+  });
+}
+
 export async function createOrderInStore(orderData: Partial<AdminOrder>): Promise<AdminOrder> {
   const currentOrders = await getAllAdminOrders();
 

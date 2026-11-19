@@ -228,14 +228,44 @@ export const RazorpayButton: React.FC<RazorpayButtonProps> = ({
 
   const saveOrderToHistory = async (order: any) => {
     try {
-      const existing = JSON.parse(localStorage.getItem('vishnu-orders') || '[]');
-      localStorage.setItem('vishnu-orders', JSON.stringify([order, ...existing]));
+      const email = (order.shipping_email || formData.email || '').trim().toLowerCase();
+      if (email) {
+        const userKey = `vishnu_orders_${email}`;
+        const existing = JSON.parse(localStorage.getItem(userKey) || '[]');
+        localStorage.setItem(userKey, JSON.stringify([order, ...existing]));
+
+        if (formData.saveAddress) {
+          const addrKey = `vishnu_addresses_${email}`;
+          const existingAddrs = JSON.parse(localStorage.getItem(addrKey) || '[]');
+          const fullAddr = [
+            formData.line1,
+            formData.line2,
+            `${formData.city}, ${formData.state} - ${formData.pincode}`,
+          ].filter(Boolean).join(', ');
+
+          const exists = existingAddrs.some((a: any) => a.address === fullAddr);
+          if (!exists) {
+            const newAddr = {
+              id: 'addr-' + Date.now(),
+              title: 'Delivery',
+              name: formData.name,
+              phone: formData.phone,
+              address: fullAddr,
+              isDefault: existingAddrs.length === 0,
+            };
+            localStorage.setItem(addrKey, JSON.stringify([...existingAddrs, newAddr]));
+          }
+        }
+      }
 
       // Save to backend orders store & admin hub
       await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order),
+        body: JSON.stringify({
+          ...order,
+          shipping_email: email,
+        }),
       });
     } catch (e) {
       // ignore storage errors

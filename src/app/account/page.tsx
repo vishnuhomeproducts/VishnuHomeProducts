@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   Trash2,
   Plus,
+  Loader2,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -31,23 +33,17 @@ function AccountContent() {
     (initialTab as any) || 'orders'
   );
 
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading, updateUserProfile } = useAuth();
   const { productIds, toggleWishlist } = useWishlist();
   const { addItem, applyCoupon, openDrawer } = useCart();
   const { products } = useProducts();
 
+  // User-isolated state (starts EMPTY - no dummy data leakage)
   const [orders, setOrders] = useState<any[]>([]);
-  const [savedAddresses, setSavedAddresses] = useState<any[]>([
-    {
-      id: 'addr-1',
-      title: 'Home',
-      name: 'Pooja Hegde',
-      phone: '9845012345',
-      address: 'Flat 302, Sagar View Apts, Kadri Temple Road, Mangaluru, Karnataka - 575002',
-      isDefault: true,
-    },
-  ]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
 
+  // Address form state
   const [newAddressOpen, setNewAddressOpen] = useState(false);
   const [newAddressForm, setNewAddressForm] = useState({
     title: 'Home',
@@ -56,31 +52,94 @@ function AccountContent() {
     address: '',
   });
 
+  // Profile form state
+  const [profileName, setProfileName] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  // Sync profile form when user loads
   useEffect(() => {
-    try {
-      const storedOrders = JSON.parse(localStorage.getItem('vishnu-orders') || '[]');
-      if (storedOrders.length > 0) {
-        setOrders(storedOrders);
-      } else {
-        // Fallback demo order
-        setOrders([
-          {
-            id: 'VHP-MG7842',
-            created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-            items: [
-              { name: 'Tomato Thokku', size: '300g', qty: 2, price: 120, emoji: '🍅' },
-              { name: 'Avakaya Mango Pickle', size: '300g', qty: 1, price: 120, emoji: '🥭' },
-            ],
-            total: 360,
-            status: 'delivered',
-            payment_status: 'paid',
-          },
-        ]);
-      }
-    } catch (e) {
-      // ignore
+    if (user) {
+      setProfileName(user.name || '');
+      setProfilePhone(user.phone || '');
     }
-  }, []);
+  }, [user]);
+
+  // Load user-isolated addresses
+  useEffect(() => {
+    if (!user?.email) {
+      setSavedAddresses([]);
+      return;
+    }
+
+    try {
+      const cleanEmail = user.email.toLowerCase();
+      const userAddrKey = `vishnu_addresses_${cleanEmail}`;
+      const stored = JSON.parse(localStorage.getItem(userAddrKey) || '[]');
+      setSavedAddresses(Array.isArray(stored) ? stored : []);
+    } catch (e) {
+      setSavedAddresses([]);
+    }
+  }, [user?.email]);
+
+  // Load user-isolated orders (Server API + User-Scoped Local Storage)
+  useEffect(() => {
+    if (!user?.email) {
+      setOrders([]);
+      return;
+    }
+
+    const fetchUserOrders = async () => {
+      setIsLoadingOrders(true);
+      try {
+        const cleanEmail = user.email.toLowerCase();
+        
+        // 1. Fetch from server API with strict email query
+        let apiOrders: any[] = [];
+        try {
+          const res = await fetch(`/api/orders/user?email=${encodeURIComponent(cleanEmail)}&userId=${encodeURIComponent(user.id || '')}`);
+          if (res.ok) {
+            const data = await res.json();
+            apiOrders = Array.isArray(data.orders) ? data.orders : [];
+          }
+        } catch (apiErr) {
+          // fallback to client store if offline
+        }
+
+        // 2. Read client-side orders scoped strictly to this email
+        const userOrdersKey = `vishnu_orders_${cleanEmail}`;
+        let localOrders: any[] = [];
+        try {
+          const localStored = JSON.parse(localStorage.getItem(userOrdersKey) || '[]');
+          localOrders = Array.isArray(localStored) ? localStored : [];
+        } catch (e) {}
+
+        // 3. Strictly enforce tenant isolation: only include orders matching active user's email
+        const orderMap = new Map<string, any>();
+        [...apiOrders, ...localOrders].forEach((ord) => {
+          if (!ord || !ord.id) return;
+          const orderEmail = (ord.shipping_email || ord.shipping_address?.email || '').trim().toLowerCase();
+          if (orderEmail === cleanEmail || (user.id && ord.user_id === user.id)) {
+            if (!orderMap.has(ord.id)) {
+              orderMap.set(ord.id, ord);
+            }
+          }
+        });
+
+        const mergedOrders = Array.from(orderMap.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        setOrders(mergedOrders);
+      } catch (err) {
+        console.error('Error fetching user orders:', err);
+      } finally {
+        setIsLoadingOrders(false);
+      }
+    };
+
+    fetchUserOrders();
+  }, [user?.email, user?.id]);
 
   const wishlistedProducts = products.filter((p) => productIds.includes(p.id));
   const totalLifetimeSpend = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
@@ -91,19 +150,75 @@ function AccountContent() {
 
   const handleAddAddress = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAddressForm.name || !newAddressForm.address) return;
+    if (!newAddressForm.name || !newAddressForm.address || !user?.email) return;
 
-    setSavedAddresses([
-      ...savedAddresses,
-      {
-        id: 'addr-' + Date.now(),
-        ...newAddressForm,
-        isDefault: false,
-      },
-    ]);
+    const cleanEmail = user.email.toLowerCase();
+    const newAddr = {
+      id: 'addr-' + Date.now(),
+      ...newAddressForm,
+      isDefault: savedAddresses.length === 0,
+    };
+    const updated = [...savedAddresses, newAddr];
+    setSavedAddresses(updated);
+    localStorage.setItem(`vishnu_addresses_${cleanEmail}`, JSON.stringify(updated));
     setNewAddressForm({ title: 'Home', name: '', phone: '', address: '' });
     setNewAddressOpen(false);
   };
+
+  const handleDeleteAddress = (id: string) => {
+    if (!user?.email) return;
+    const cleanEmail = user.email.toLowerCase();
+    const updated = savedAddresses.filter((a) => a.id !== id);
+    setSavedAddresses(updated);
+    localStorage.setItem(`vishnu_addresses_${cleanEmail}`, JSON.stringify(updated));
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateUserProfile({
+      name: profileName.trim(),
+      phone: profilePhone.trim(),
+    });
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 3000);
+  };
+
+  // If loading auth state
+  if (authLoading) {
+    return (
+      <div className="py-20 bg-brandBg min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-2.5 text-xs text-brandText2">
+          <Loader2 className="w-4 h-4 animate-spin text-brandAccent" />
+          <span>Loading your account...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If unauthenticated, display standard sign-in prompt
+  if (!isAuthenticated) {
+    return (
+      <div className="py-16 bg-brandBg min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl border border-brandBorder shadow-xl text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-brandAccent-light text-brandAccent flex items-center justify-center mx-auto text-2xl font-bold">
+            <Lock className="w-6 h-6 text-brandAccent" />
+          </div>
+          <h2 className="font-display text-xl font-bold text-brandText">Sign In Required</h2>
+          <p className="text-xs text-brandText2 leading-relaxed">
+            Please sign in to view your orders, saved addresses, and personal profile details.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center justify-center w-full py-2.5 px-4 bg-brandAccent hover:bg-brandAccent-mid text-white text-xs font-bold rounded-button shadow-xs"
+            >
+              Sign In to Your Account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-10 bg-brandBg min-h-screen">
@@ -113,13 +228,13 @@ function AccountContent() {
         <div className="bg-white p-6 rounded-card border border-brandBorder shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full bg-brandAccent-light text-brandAccent font-bold text-xl flex items-center justify-center border border-brandAccent/30 shadow-sm">
-              {user?.name?.[0]?.toUpperCase() || 'U'}
+              {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
             </div>
             <div>
               <h1 className="font-display text-xl sm:text-2xl font-bold text-brandText">
-                {user?.name || 'Coastal Food Lover'}
+                {user?.name || user?.email?.split('@')[0] || 'My Account'}
               </h1>
-              <p className="text-xs text-brandText3">{user?.email || 'customer@vishnuhomeproducts.in'}</p>
+              <p className="text-xs text-brandText3 font-mono">{user?.email}</p>
             </div>
           </div>
 
@@ -226,14 +341,21 @@ function AccountContent() {
         {/* Tab 1: Orders */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            {orders.length === 0 ? (
+            {isLoadingOrders ? (
+              <div className="bg-white p-10 rounded-card border border-brandBorder text-center space-y-2">
+                <Loader2 className="w-6 h-6 text-brandAccent animate-spin mx-auto" />
+                <p className="text-xs text-brandText2">Loading your orders...</p>
+              </div>
+            ) : orders.length === 0 ? (
               <div className="bg-white p-10 rounded-card border border-brandBorder text-center space-y-3">
                 <Package className="w-10 h-10 text-brandText3 mx-auto" />
-                <h3 className="font-semibold text-sm text-brandText">No orders yet</h3>
-                <p className="text-xs text-brandText2">Once you place an order, it will show up here.</p>
+                <h3 className="font-semibold text-sm text-brandText">No orders placed yet</h3>
+                <p className="text-xs text-brandText2">
+                  You have not placed any orders with <strong>{user?.email}</strong> yet.
+                </p>
                 <Link
                   href="/shop"
-                  className="inline-block px-4 py-2 bg-brandAccent text-white text-xs font-semibold rounded-button"
+                  className="inline-block px-4 py-2 bg-brandAccent text-white text-xs font-semibold rounded-button shadow-xs"
                 >
                   Start Shopping
                 </Link>
@@ -247,7 +369,7 @@ function AccountContent() {
                   <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-brandBorder text-xs">
                     <div>
                       <span className="text-brandText3">Order #</span>
-                      <strong className="font-mono text-brandText ml-1">{ord.id}</strong>
+                      <strong className="font-mono text-brandText ml-1">{ord.order_number || ord.id}</strong>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-brandText3">
@@ -292,7 +414,7 @@ function AccountContent() {
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-sm font-bold text-brandText">
-                        Total: <span className="text-brandAccent">{formatINR(ord.total)}</span>
+                        Total: <span className="text-brandAccent font-black">{formatINR(ord.total)}</span>
                       </div>
                       <button
                         type="button"
@@ -329,7 +451,7 @@ function AccountContent() {
               <div className="bg-white p-10 rounded-card border border-brandBorder text-center space-y-3">
                 <Heart className="w-10 h-10 text-brandText3 mx-auto" />
                 <h3 className="font-semibold text-sm text-brandText">Your wishlist is empty</h3>
-                <p className="text-xs text-brandText2">Explore our thokkus and tap the heart icon to save your favourites.</p>
+                <p className="text-xs text-brandText2">Explore our coastal flavours and tap the heart icon to save favourites.</p>
                 <Link
                   href="/shop"
                   className="inline-block px-4 py-2 bg-brandAccent text-white text-xs font-semibold rounded-button"
@@ -411,26 +533,26 @@ function AccountContent() {
 
             {newAddressOpen && (
               <form onSubmit={handleAddAddress} className="bg-white p-5 rounded-card border border-brandAccent/40 shadow-sm space-y-3">
-                <h3 className="text-xs font-bold text-brandText uppercase tracking-wider">New Address</h3>
+                <h3 className="text-xs font-bold text-brandText uppercase tracking-wider">New Shipping Address</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
                     label="Contact Name"
-                    placeholder="Full name"
+                    placeholder="Enter recipient full name"
                     value={newAddressForm.name}
                     onChange={(e) => setNewAddressForm({ ...newAddressForm, name: e.target.value })}
                     required
                   />
                   <Input
                     label="Phone"
-                    placeholder="10-digit mobile"
+                    placeholder="10-digit mobile number"
                     value={newAddressForm.phone}
                     onChange={(e) => setNewAddressForm({ ...newAddressForm, phone: e.target.value })}
                     required
                   />
                   <div className="sm:col-span-2">
                     <Input
-                      label="Full Address (Street, City, State, PIN)"
-                      placeholder="Address line"
+                      label="Full Address (House/Flat, Street, City, State, PIN)"
+                      placeholder="e.g. Flat 101, Palm Grove, MG Road, Mangaluru, KA - 575001"
                       value={newAddressForm.address}
                       onChange={(e) => setNewAddressForm({ ...newAddressForm, address: e.target.value })}
                       required
@@ -448,22 +570,42 @@ function AccountContent() {
               </form>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {savedAddresses.map((addr) => (
-                <div key={addr.id} className="bg-white p-5 rounded-card border border-brandBorder shadow-sm space-y-2 relative">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-brandAccent bg-brandAccent-light px-2 py-0.5 rounded">
-                      {addr.title}
-                    </span>
-                    {addr.isDefault && (
-                      <span className="text-[10px] font-semibold text-brandGreen">Default</span>
-                    )}
+            {savedAddresses.length === 0 ? (
+              <div className="bg-white p-8 rounded-card border border-brandBorder text-center space-y-2">
+                <MapPin className="w-8 h-8 text-brandText3 mx-auto" />
+                <h3 className="font-semibold text-xs text-brandText">No saved addresses yet</h3>
+                <p className="text-xs text-brandText2">
+                  Add an address for quick one-click checkout on future orders.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {savedAddresses.map((addr) => (
+                  <div key={addr.id} className="bg-white p-5 rounded-card border border-brandBorder shadow-sm space-y-2 relative">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-brandAccent bg-brandAccent-light px-2 py-0.5 rounded">
+                        {addr.title}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {addr.isDefault && (
+                          <span className="text-[10px] font-semibold text-brandGreen">Default</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAddress(addr.id)}
+                          className="text-brandText3 hover:text-brandRed p-1 rounded transition-colors"
+                          title="Delete address"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-xs font-bold text-brandText">{addr.name} ({addr.phone})</div>
+                    <p className="text-xs text-brandText2 leading-relaxed">{addr.address}</p>
                   </div>
-                  <div className="text-xs font-bold text-brandText">{addr.name} ({addr.phone})</div>
-                  <p className="text-xs text-brandText2 leading-relaxed">{addr.address}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -473,14 +615,36 @@ function AccountContent() {
             <h2 className="font-bold text-sm text-brandText pb-2 border-b border-brandBorder">
               Personal Information
             </h2>
-            <div className="space-y-3">
-              <Input label="Name" defaultValue={user?.name || 'Pooja Hegde'} />
-              <Input label="Email Address" defaultValue={user?.email || 'pooja@example.com'} disabled />
-              <Input label="Mobile Number" defaultValue={user?.phone || '9845012345'} />
-              <div className="pt-2">
-                <Button size="sm">Save Profile Changes</Button>
+
+            {profileSaved && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 font-medium flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Profile details saved successfully!</span>
               </div>
-            </div>
+            )}
+
+            <form onSubmit={handleSaveProfile} className="space-y-3">
+              <Input
+                label="Full Name"
+                placeholder="Enter your name"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+              />
+              <Input
+                label="Email Address"
+                value={user?.email || ''}
+                disabled
+              />
+              <Input
+                label="Mobile Number"
+                placeholder="10-digit mobile number"
+                value={profilePhone}
+                onChange={(e) => setProfilePhone(e.target.value)}
+              />
+              <div className="pt-2">
+                <Button type="submit" size="sm">Save Profile Changes</Button>
+              </div>
+            </form>
           </div>
         )}
 

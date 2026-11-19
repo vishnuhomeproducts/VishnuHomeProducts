@@ -224,9 +224,11 @@ export const Navbar: React.FC = () => {
               className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 text-xs font-medium text-brandText bg-brandBg border border-brandBorder rounded-full hover:border-brandAccent transition-colors"
             >
               <div className="w-5 h-5 rounded-full bg-brandAccent text-white flex items-center justify-center text-[10px] font-bold">
-                {user?.name?.[0]?.toUpperCase() || 'U'}
+                {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
               </div>
-              <span className="hidden sm:inline max-w-[80px] truncate">{user?.name}</span>
+              <span className="hidden sm:inline max-w-[80px] truncate">
+                {user?.name || user?.email?.split('@')[0]}
+              </span>
             </Link>
           ) : (
             <Link

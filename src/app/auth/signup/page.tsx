@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Sparkles, ShieldCheck, Gift, Truck } from 'lucide-react';
+import { ArrowRight, Sparkles, ShieldCheck, Truck, Gift } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { createClient } from '@/lib/supabase/client';
 import { Input } from '@/components/ui/Input';
@@ -22,7 +22,10 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-    if (!name || !email || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+
+    if (!cleanName || !cleanEmail || !password) {
       setErrorMessage('Please fill in all fields.');
       return;
     }
@@ -31,26 +34,29 @@ export default function SignupPage() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (supabaseUrl && !supabaseUrl.includes('placeholder') && !supabaseUrl.includes('your-project')) {
+        const { data, error } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              name: cleanName,
+            },
           },
-        },
-      });
+        });
 
-      if (error) {
-        loginDemo(email, name);
-        router.push('/account');
-        return;
+        if (!error && data?.user) {
+          loginDemo(cleanEmail, cleanName);
+          router.push('/account');
+          return;
+        }
       }
 
-      loginDemo(email, name);
+      loginDemo(cleanEmail, cleanName);
       router.push('/account');
     } catch (err: any) {
-      loginDemo(email, name);
+      loginDemo(cleanEmail, cleanName);
       router.push('/account');
     } finally {
       setIsLoading(false);
@@ -62,20 +68,27 @@ export default function SignupPage() {
       <div className="w-full max-w-4xl bg-white rounded-3xl border border-brandBorder shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         {/* Left Heritage Showcase Panel (5 cols) */}
         <div className="lg:col-span-5 bg-gradient-to-br from-[#190d0c] via-[#331113] to-[#591318] text-white p-8 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-amber-500/20 blur-3xl pointer-events-none" />
+          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-brandRed/30 blur-3xl pointer-events-none" />
 
-          <div className="space-y-5 relative z-10">
-            <Link href="/" className="inline-flex items-center gap-2.5">
-              <img src="/logo.png" alt="VISHNU" className="h-8 w-auto object-contain" />
-              <div className="border border-white/60 text-white font-bold text-[11px] px-2 py-0.5 rounded uppercase tracking-wider">
-                Home Products
+          <div className="space-y-6 relative z-10">
+            <Link href="/" className="inline-flex items-center gap-2 group">
+              <div className="w-10 h-10 rounded-2xl bg-white text-brandRed font-black text-xl flex items-center justify-center tracking-tighter shadow-lg group-hover:scale-105 transition-transform">
+                V
+              </div>
+              <div>
+                <div className="text-white font-black text-base tracking-tight leading-tight">
+                  VISHNU
+                </div>
+                <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wider">
+                  Home Products · Mangaluru
+                </div>
               </div>
             </Link>
 
-            <div className="space-y-2 pt-2">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
-                <Sparkles className="w-3 h-3" />
-                <span>Welcome Gift Inside</span>
+            <div className="space-y-2 pt-4">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 text-amber-300 border border-white/10">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Wood-Pressed · Sun-Dried · Pure</span>
               </span>
               <h2 className="font-display text-2xl sm:text-3xl font-bold leading-tight">
                 Join 2,500+ Families Across India
@@ -122,18 +135,20 @@ export default function SignupPage() {
           <form onSubmit={handleSignup} className="space-y-4">
             <Input
               label="Full Name"
-              placeholder="e.g. Pooja Hegde"
+              placeholder="Enter your full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
               required
             />
 
             <Input
               label="Email Address"
               type="email"
-              placeholder="pooja@example.com"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               required
             />
 
@@ -143,6 +158,7 @@ export default function SignupPage() {
               placeholder="At least 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
               minLength={6}
             />

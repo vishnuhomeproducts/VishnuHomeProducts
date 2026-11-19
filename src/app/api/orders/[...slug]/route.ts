@@ -3,6 +3,7 @@ import {
   getAllAdminOrders,
   getAllOrdersFromStore,
   createOrderInStore,
+  getOrdersForUser,
 } from '@/lib/ordersStore';
 import { getAllProducts } from '@/lib/productsStore';
 import { calculateDeliveryFee } from '@/lib/delivery';
@@ -18,6 +19,18 @@ export async function GET(
     const id = params.slug?.[0];
     if (!id) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+    }
+
+    // Support /api/orders/user?email=...&userId=... for user-isolated order lookups
+    if (id.toLowerCase() === 'user') {
+      const url = new URL(req.url);
+      const email = url.searchParams.get('email') || '';
+      const userId = url.searchParams.get('userId') || undefined;
+      if (!email && !userId) {
+        return NextResponse.json({ orders: [] });
+      }
+      const userOrders = await getOrdersForUser(email, userId);
+      return NextResponse.json({ orders: userOrders });
     }
 
     const orders = await getAllAdminOrders();
