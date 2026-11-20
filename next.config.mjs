@@ -20,6 +20,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,
@@ -58,6 +59,15 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        source: '/api/products',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        ],
+      },
       {
         source: '/logo.png',
         headers: [

@@ -24,7 +24,10 @@ export async function GET(
     try {
       const coupons = await getAllCoupons();
       const activeCoupons = coupons.filter((c) => c.active);
-      return NextResponse.json({ coupons: activeCoupons });
+      return NextResponse.json(
+        { coupons: activeCoupons },
+        { headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=86400' } }
+      );
     } catch {
       return NextResponse.json({ coupons: [] });
     }
@@ -47,7 +50,10 @@ export async function GET(
       const slug = searchParams.get('slug') || undefined;
       const all = searchParams.get('all') === 'true';
       const reviews = await getAllReviews(!all, slug);
-      return NextResponse.json({ reviews });
+      return NextResponse.json(
+        { reviews },
+        { headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=86400' } }
+      );
     } catch {
       return NextResponse.json({ error: 'Failed to load reviews' }, { status: 500 });
     }
@@ -57,7 +63,10 @@ export async function GET(
   if (action === 'settings') {
     try {
       const settings = await getStoreConfig();
-      return NextResponse.json({ settings });
+      return NextResponse.json(
+        { settings },
+        { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
+      );
     } catch (err: any) {
       return NextResponse.json({ error: err.message || 'Failed to fetch settings' }, { status: 500 });
     }

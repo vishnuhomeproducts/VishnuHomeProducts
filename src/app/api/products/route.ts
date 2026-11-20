@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     if (cachedData) {
       return NextResponse.json(
         { products: cachedData, cached: true },
-        { headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' } }
+        { headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
       );
     }
 
@@ -36,7 +36,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(
       { products: filtered, cached: false },
-      { headers: { 'X-Cache': 'MISS', 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' } }
+      { headers: { 'X-Cache': 'MISS', 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
     );
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });

@@ -15,7 +15,7 @@ interface CacheEntry {
   data: any[];
 }
 const MEMORY_CACHE = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes memory TTL to eliminate redundant DB reads
 
 export function getCachedProducts(cacheKey: string): any[] | null {
   const cached = MEMORY_CACHE.get(cacheKey);

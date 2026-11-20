@@ -1,0 +1,32 @@
+version: '3.8'
+
+# ==============================================================================
+# Vishnu Home Products — Production Docker Compose
+# ==============================================================================
+# Usage:
+#   docker compose up -d --build
+#
+# Runs Next.js Standalone container on port 3000 with health checks
+# and automatic restart.
+# ==============================================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vishnu-home-products
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
