@@ -1,5 +1,6 @@
 import { AdminOrder, CustomerProfile, AbandonedCart, AdminStats } from '@/types/admin';
 import { createAdminClient } from '@/lib/supabase/server';
+import { isTursoConfigured, executeTursoQuery } from '@/lib/tursoDb';
 import fs from 'fs';
 import path from 'path';
 
@@ -271,7 +272,47 @@ function persistOrders(orders: AdminOrder[]) {
 }
 
 export async function getAllAdminOrders(): Promise<AdminOrder[]> {
-  // Attempt to read from Supabase first if available
+  // 1. Attempt to read from Turso if configured (1 Billion reads/month, zero pause)
+  if (isTursoConfigured()) {
+    try {
+      const rows = await executeTursoQuery('SELECT * FROM orders ORDER BY created_at DESC;');
+      if (Array.isArray(rows) && rows.length > 0) {
+        const tursoOrders: AdminOrder[] = rows.map((row: any) => ({
+          id: row.id,
+          order_number: row.order_number || row.id,
+          items: typeof row.items === 'string' ? JSON.parse(row.items || '[]') : row.items || [],
+          subtotal: Number(row.subtotal) || 0,
+          delivery_fee: Number(row.delivery_fee) || 0,
+          discount: Number(row.discount) || 0,
+          total: Number(row.total) || 0,
+          coupon_code: row.coupon_code || '',
+          status: row.status || 'confirmed',
+          payment_status: row.payment_status || 'paid',
+          payment_method: row.payment_method || 'razorpay',
+          razorpay_order_id: row.razorpay_order_id,
+          razorpay_payment_id: row.razorpay_payment_id,
+          shipping_name: row.shipping_name || 'Customer',
+          shipping_phone: row.shipping_phone || '',
+          shipping_email: row.shipping_email || '',
+          shipping_address: typeof row.shipping_address === 'string' ? JSON.parse(row.shipping_address || '{}') : row.shipping_address || {},
+          delivery_type: row.delivery_type || 'pan_india_courier',
+          courier_partner: row.courier_partner || 'Pending',
+          tracking_awb: row.tracking_awb || '',
+          expected_delivery: row.expected_delivery || '',
+          created_at: row.created_at || new Date().toISOString(),
+          is_seen: true,
+          is_archived: false,
+        }));
+        const persisted = loadPersistedOrders();
+        const existingIds = new Set(tursoOrders.map((o) => o.id));
+        return [...tursoOrders, ...persisted.filter((o) => !existingIds.has(o.id))];
+      }
+    } catch (tursoErr) {
+      console.warn('Turso query note:', tursoErr);
+    }
+  }
+
+  // 2. Attempt to read from Supabase first if available
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -424,6 +465,41 @@ export async function createOrderInStore(orderData: Partial<AdminOrder>): Promis
     ]);
   } catch (e) {
     // Non-fatal
+  }
+
+  // Also push to Turso if configured (1B reads/month, zero pause)
+  if (isTursoConfigured()) {
+    try {
+      await executeTursoQuery(
+        `INSERT OR REPLACE INTO orders (id, order_number, created_at, shipping_name, shipping_phone, shipping_email, shipping_address, items, subtotal, delivery_fee, discount, total, coupon_code, status, payment_status, payment_method, razorpay_order_id, razorpay_payment_id, razorpay_signature, delivery_type, courier_partner, tracking_awb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        [
+          newOrder.id,
+          newOrder.order_number,
+          newOrder.created_at,
+          newOrder.shipping_name,
+          newOrder.shipping_phone,
+          newOrder.shipping_email,
+          JSON.stringify(newOrder.shipping_address),
+          JSON.stringify(newOrder.items),
+          newOrder.subtotal,
+          newOrder.delivery_fee,
+          newOrder.discount,
+          newOrder.total,
+          newOrder.coupon_code || '',
+          newOrder.status,
+          newOrder.payment_status,
+          newOrder.payment_method,
+          newOrder.razorpay_order_id || '',
+          newOrder.razorpay_payment_id || '',
+          newOrder.razorpay_signature || '',
+          newOrder.delivery_type,
+          newOrder.courier_partner,
+          newOrder.tracking_awb || '',
+        ]
+      );
+    } catch (tursoErr) {
+      console.warn('Turso insert note:', tursoErr);
+    }
   }
 
   // Sync new orders to Google Sheets if configured

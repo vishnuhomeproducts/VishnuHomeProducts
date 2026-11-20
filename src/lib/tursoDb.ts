@@ -8,15 +8,19 @@
  * 4. Zero npm dependencies (uses native fetch).
  */
 
-const TURSO_URL = process.env.TURSO_DATABASE_URL || '';
-const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN || '';
+function getTursoConfig() {
+  const url = process.env.TURSO_DATABASE_URL || '';
+  const token = process.env.TURSO_AUTH_TOKEN || '';
+  return { url, token };
+}
 
 export function isTursoConfigured(): boolean {
+  const { url, token } = getTursoConfig();
   return (
-    Boolean(TURSO_URL) &&
-    !TURSO_URL.includes('placeholder') &&
-    Boolean(TURSO_AUTH_TOKEN) &&
-    !TURSO_AUTH_TOKEN.includes('placeholder')
+    Boolean(url) &&
+    !url.includes('placeholder') &&
+    Boolean(token) &&
+    !token.includes('placeholder')
   );
 }
 
@@ -24,6 +28,7 @@ export function isTursoConfigured(): boolean {
  * Execute raw SQL query against Turso LibSQL HTTP API
  */
 export async function executeTursoQuery(sql: string, args: any[] = []): Promise<any> {
+  const { url: TURSO_URL, token: TURSO_AUTH_TOKEN } = getTursoConfig();
   if (!isTursoConfigured()) {
     throw new Error('Turso is not configured');
   }
